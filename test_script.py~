@@ -1,0 +1,6 @@
+import pdb_interface as pi
+import os
+
+os.chdir('../training30')
+res = pi.sample_amino_acid_from_protein('1MG7','TRP')
+shapes = pi.get_res_atomic_coord(res)
