@@ -11,6 +11,7 @@ import pdb_interface as pdb_int
 import tensorflow as tf
 import protein
 import hnn
+import hologram
 
 from tensorfieldnetworks.utils import FLOAT_TYPE
 
@@ -22,7 +23,7 @@ AA_NUM = 20
 #
 
 # l value associated with maximum frequency used in fourier transforms
-cutoffL = 1
+cutoffL = 4
 # frequency to be used to make the holograms
 k = 0.0001
 # hologram radius
@@ -54,22 +55,27 @@ print(str(len(testProteins)) + ' testing proteins gathered')
 #
 # get amino acid structures from all training proteins
 #
-trainExamplesPerAa = 1
+trainExamplesPerAa = 0
 print('Getting ' + str(trainExamplesPerAa) + ' training holograms per amino ' +
       'acid from training proteins')
-train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trainProteins,trainDir,
-                                                          trainExamplesPerAa,
-                                                          d,rH,k,cutoffL)
+#train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trainProteins,trainDir,trainExamplesPerAa,d,rH,k,cutoffL)
+
 
 #
-# get amino acid holograms from all test proteins
+# load premade dataset
 #
+cutoff_l = 4
+rh = 5.0
+k = 0.1
+(train_hgrams_real,train_hgrams_imag,train_labels,
+ test_hgrams_real,test_hgrams_imag,test_labels) = hologram.load_holograms(k,rh,cutoff_l)
+
 
 # PUT THIS IN LATER ONCE NETWORK WORKS
 #tf.reset_default_graph()
 
 
-network,label,inputs_real,inputs_imag,loss = hnn.hnn([4,10,10],AA_NUM,cutoffL)
+network,label,inputs_real,inputs_imag,loss,boltzmann_weights = hnn.hnn([4,10,10],AA_NUM,cutoffL)
 
 optim = tf.train.AdamOptimizer(learning_rate=0.001)
 train_op = optim.minimize(loss)
@@ -92,7 +98,8 @@ epochs = 100
 print_epoch = 10
 hnn.train_on_data(train_hgrams_real,train_hgrams_imag,train_labels,
                   inputs_real,inputs_imag,label,
-                  sess,loss,train_op,epochs,print_epoch)
+                  sess,loss,train_op,boltzmann_weights,
+                  epochs,print_epoch)
 
 print('Terminating successfully')
     

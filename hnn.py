@@ -7,8 +7,9 @@ import tensorflow as tf
 import numpy as np
 from tensorfieldnetworks.utils import FLOAT_TYPE
 import clebsch
+import scipy as sp
 
-cutoff_l = 1
+cutoff_l = 4
 
 # here we implement the Clebsch Gordan coefficients as
 # 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products
@@ -167,13 +168,13 @@ def hnn(dimensions,classes,l_cutoff):
     loss = tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=boltzmann_weights)
 
 
-    return layers,label,inputs_real,inputs_imag,loss
+    return layers,label,inputs_real,inputs_imag,loss,boltzmann_weights
         
 
 
 # function to train the network
 def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #data
-                  inputs_real,inputs_imag,label,sess,loss,train_op, # feed dict keys
+                  inputs_real,inputs_imag,label,sess,loss,train_op,boltzmann_weights, # feed dict keys
                   epochs,print_epochs): #training parameters
     max_training_score = training_coeffs_real[0].shape[0]
 
@@ -191,10 +192,26 @@ def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #da
             fd[label] = y_
             loss_val,_ = sess.run([loss,train_op],feed_dict=fd)
             loss_ += loss_val
-            loss_over_time.append(loss_/float(len(training_labels)))
-            epoch += 1
-            results = []
-            if (epoch%print_epochs) == 0:
-                guess_matrix = np.zeros([20,20])
-                print('Epoch ' + str(epoch) + ' loss: ' +str(loss_/len(training_labels)))
+        loss_over_time.append(loss_/float(len(training_labels)))
+        epoch += 1
+        results = []
+        if (epoch%print_epochs) == 0:
+            guess_matrix = np.zeros([20,20])
+            print('Epoch ' + str(epoch) + ' loss: ' +str(loss_/len(training_labels)))
+            for i in range(len(training_labels)):
+                y_ = training_labels[i]
+                x_real = [training_coeffs_real[l][i] for l in range(cutoff_l+1)]
+                x_imag = [training_coeffs_imag[l][i] for l in range(cutoff_l+1)]
+                
+                fd = {i: d for i, d in zip(inputs_real,x_real)}
+                fd.update({i: d for i, d in zip(inputs_imag,x_imag)})
+                fd[label] = y_
+                boltz = sess.run(boltzmann_weights,feed_dict=fd)
+                cat = list(y_).index(1)
+                cat_guess = np.argmax(boltz)
+                results.append((cat-cat_guess) == 0)
+                guess_matrix[cat] += sp.special.softmax(boltz)
+            score = np.sum(results)
+            print('Current train accuracy = ' + str(float(score)/max_training_score))
+    print('SUMMARY:\n Total epochs: ' + str(epoch) + ' \n Final score: ' + str(score))
     return loss
