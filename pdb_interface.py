@@ -228,7 +228,13 @@ def get_amino_acid_shapes_from_protein_list(protein_list,
     for l in range(l_max + 1):
         hologram_coeffs[l] = np.stack([x[l] for x in data_dicts])
 
-    return hologram_coeffs,hologram_labels
+    hologram_coeffs_real = {}
+    hologram_coeffs_imag = {}
+    for l in range(l_max + 1):
+        hologram_coeffs_real[l] = np.real(hologram_coeffs[l])
+        hologram_coeffs_imag[l] = np.imag(hologram_coeffs[l])
+        
+    return hologram_coeffs_real,hologram_coeffs_imag,hologram_labels
                                                               
         
     

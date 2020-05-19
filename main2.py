@@ -197,14 +197,26 @@ def full_layer(input_real_dict,input_imag_dict,output_dim,layer_num):
 def spherical_input_ri(num_channel,l_cutoff):    
     input_real_list = []
     input_imag_list = []
-    for i in range(l_cutoff+1):
+    for l in range(l_cutoff+1):
         input_real_list.append(tf.placeholder(FLOAT_TYPE, 
-                                             shape=[num_channel,2*i+1],
+                                             shape=[num_channel,2*l+1],
                                              name='input_real_l_' + str(l)))
         input_imag_list.append(tf.placeholder(FLOAT_TYPE,
-                                               shape=[num_channel,2*i+1],
+                                               shape=[num_channel,2*l+1],
                                                name='input_imag_l_' + str(l)))
     return input_real_list,input_imag_list
+
+# turn the arrays into a list of dictionaries where the second dimension is the key
+# index of the dictionary
+def make_inputs_dicts_ri(input_real,input_imag,l_cutoff):
+    input_real_dict = {}
+    input_imag_dict = {}
+    for i in range(l_cutoff+1):
+        input_real_dict[i] = input_real[i]
+        input_imag_dict[i] = input_imag[i]
+    return input_real_dict,input_imag_dict
+
+                                    
 
 os.chdir('/home/mpun/scratch/protein_workspace/casp7/workspace')
 
@@ -215,7 +227,7 @@ num_channels = 4
 output_dim = 2
 classes = len(aa_to_ind.keys())  
 l_cutoff = 4#cutoff_l
-
+cutoff_l = l_cutoff
 # placeholdr for the label
 label = tf.placeholder(FLOAT_TYPE,shape=[classes],name='truth_label')
 
@@ -254,12 +266,12 @@ loss = tf.nn.softmax_cross_entropy_with_logits(labels=label, logits=boltzmann_we
 optim = tf.train.GradientDescentOptimizer(learning_rate=0.01)
 train_op = optim.minimize(loss)
 grads_and_vars = optim.compute_gradients(loss)
-
+size = 20
 score = 0
 print_epochs = 100
 epoch = -1
-max_training_score = training_examples*size
-max_test_score = test_examples*size
+max_training_score = trainExamplesPerAa*size
+max_test_score = testExamplesPerAa*size
 
 guess_matrix = np.zeros([20,20])
 loss_over_time = []

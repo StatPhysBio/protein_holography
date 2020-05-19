@@ -47,5 +47,5 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
 
     fourier_coeff_l = []
     for m in range(0,2*l+1):
-        fourier_coeff_l.append(hologram_coeff_lm(r,t,p,r_h,k,l,m))
+        fourier_coeff_l.append(hologram_coeff_lm(r,t,p,r_h,k,l,m-l))
     return np.array(fourier_coeff_l)

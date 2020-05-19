@@ -10,8 +10,12 @@ import os
 import pdb_interface as pdb_int
 import tensorflow as tf
 import protein
+import hnn
 
 from tensorfieldnetworks.utils import FLOAT_TYPE
+
+# constants
+AA_NUM = 20
 
 #
 # parameters for the current analysis
@@ -50,10 +54,10 @@ print(str(len(testProteins)) + ' testing proteins gathered')
 #
 # get amino acid structures from all training proteins
 #
-trainExamplesPerAa = 5
+trainExamplesPerAa = 1
 print('Getting ' + str(trainExamplesPerAa) + ' training holograms per amino ' +
       'acid from training proteins')
-train_hgrams,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trainProteins,trainDir,
+train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trainProteins,trainDir,
                                                           trainExamplesPerAa,
                                                           d,rH,k,cutoffL)
 
@@ -62,9 +66,33 @@ train_hgrams,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trai
 #
 
 # PUT THIS IN LATER ONCE NETWORK WORKS
-tf.reset_default_graph()
+#tf.reset_default_graph()
 
 
+network,label,inputs_real,inputs_imag,loss = hnn.hnn([4,10,10],AA_NUM,cutoffL)
+
+optim = tf.train.AdamOptimizer(learning_rate=0.001)
+train_op = optim.minimize(loss)
+
+print('GRAPH:\n')
+print(tf.Graph())
+
+print('Initializing the network')
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+print('Examine the data')
+
+print('Training network')
+# train the network
+LAYER_0 = 0
+REAL = 0
+IMAG = 1
+epochs = 100
+print_epoch = 10
+hnn.train_on_data(train_hgrams_real,train_hgrams_imag,train_labels,
+                  inputs_real,inputs_imag,label,
+                  sess,loss,train_op,epochs,print_epoch)
 
 print('Terminating successfully')
     
