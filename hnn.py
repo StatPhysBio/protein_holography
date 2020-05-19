@@ -3,7 +3,7 @@
 # holographic machine learning
 #
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 from tensorfieldnetworks.utils import FLOAT_TYPE
 import clebsch

@@ -57,14 +57,14 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
 #
 # at the moment only works for gibbs system
 def load_holograms(k_,hologram_radius,cutoff_l):
-    file_workspace = '/home/mpun/scratch/protein_workspace/casp7/notebooks'
+    file_workspace = '/usr/lusers/mpun/data/holograms'
     os.chdir(file_workspace)
-    training_f_coeffs_real = np.load('tetris_training_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)[()]
-    training_f_coeffs_imag = np.load('tetris_training_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)[()]
-    training_labels = np.load('tetris_training_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)
-    test_f_coeffs_real = np.load('tetris_test_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)[()]
-    test_f_coeffs_imag = np.load('tetris_test_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)[()]
-    test_labels = np.load('tetris_test_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True)
+    training_f_coeffs_real = np.load('tetris_training_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    training_f_coeffs_imag = np.load('tetris_training_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    training_labels = np.load('tetris_training_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
+    test_f_coeffs_real = np.load('tetris_test_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    test_f_coeffs_imag = np.load('tetris_test_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    test_labels = np.load('tetris_test_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
 
     return (training_f_coeffs_real,training_f_coeffs_imag,training_labels,
             test_f_coeffs_real,test_f_coeffs_imag,test_labels)

@@ -8,7 +8,7 @@
 #
 import os
 import pdb_interface as pdb_int
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import protein
 import hnn
 import hologram
@@ -43,11 +43,11 @@ testDir = casp7Dir + '/validation'
 # get train and test proteins
 #
 print('Getting training proteins from ' + trainDir)
-trainProteins = pdb_int.get_proteins_from_dir(trainDir)
-print(str(len(trainProteins)) + ' training proteins gathered')
+#trainProteins = pdb_int.get_proteins_from_dir(trainDir)
+#print(str(len(trainProteins)) + ' training proteins gathered')
 print('Gathering testing proteins from ' + testDir)
-testProteins = pdb_int.get_proteins_from_dir(testDir)
-print(str(len(testProteins)) + ' testing proteins gathered')
+#testProteins = pdb_int.get_proteins_from_dir(testDir)
+#print(str(len(testProteins)) + ' testing proteins gathered')
 
 
 
