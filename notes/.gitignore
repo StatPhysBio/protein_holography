@@ -285,3 +285,6 @@ TSWLatexianTemp*
 
 #from overleaf download
 .DS_Store
+#autosave gitignores
+.gitignore~
+.#.gitignore
