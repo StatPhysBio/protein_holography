@@ -68,3 +68,11 @@ def load_holograms(k_,hologram_radius,cutoff_l):
 
     return (training_f_coeffs_real,training_f_coeffs_imag,training_labels,
             test_f_coeffs_real,test_f_coeffs_imag,test_labels)
+
+#
+# function to save holograms
+#
+
+def save(holograms,filename,directory):
+    np.save(directory+filename,holograms,allow_pickle=True)
+

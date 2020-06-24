@@ -1,3 +1,4 @@
+
 #
 # Holographic neural network module for rotationally invariant
 # holographic machine learning
@@ -6,29 +7,23 @@
 import tensorflow.compat.v1 as tf
 import numpy as np
 from tensorfieldnetworks.utils import FLOAT_TYPE
-import clebsch
+#import clebsch
 import scipy as sp
 
-cutoff_l = 4
+tf.compat.v1.disable_eager_execution()
+
+cutoff_l = 13
 
 # here we implement the Clebsch Gordan coefficients as
 # 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products
 # Fourier coefficients
-cg_matrices = {}
+cg_matrices = np.load('/gscratch/spe/mpun/cg/CG_matrix_l=13.npy',allow_pickle=True).item()
 tf_cg_matrices = {}
-tf_add_cg_matrices = {}
-add_cg_matrices = {}
 for l in range(cutoff_l + 1):
     for l1 in range(cutoff_l + 1):
         for l2 in range(0,l1+1):
-            cg_matrices[(l,l1,l2)] = np.zeros([2*l + 1, 2*l1 + 1, 2*l2 +1])
-            for m in range(2*l+1):
-                for m1 in range(2*l1 + 1):
-                    for m2 in range(2*l2 + 1):
-                        cg_matrices[(l,l1,l2)][m,m1,m2] = clebsch.clebsch(l1,m1-l1,l2,m2-l2,l,m-l)
-                        tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)
-                        tf_add_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(np.where(cg_matrices[(l,l1,l2)]>0,1,0))
-                        add_cg_matrices[(l,l1,l2)] = np.where(cg_matrices[(l,l1,l2)]!=0,1,0)
+            tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)
+                        
                     
 
 # this function makes linear weights of given dimensions for use in taking
@@ -175,7 +170,7 @@ def hnn(dimensions,classes,l_cutoff):
 # function to train the network
 def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #data
                   inputs_real,inputs_imag,label,sess,loss,train_op,boltzmann_weights, # feed dict keys
-                  epochs,print_epochs): #training parameters
+                  epochs,print_epochs,cutoff_l): #training parameters
     max_training_score = training_coeffs_real[0].shape[0]
 
     epoch = -1
