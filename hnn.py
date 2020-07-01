@@ -9,27 +9,19 @@ from tensorfieldnetworks.utils import FLOAT_TYPE
 import clebsch
 import scipy as sp
 
-cutoff_l = 4
-
-# here we implement the Clebsch Gordan coefficients as
-# 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products
-# Fourier coefficients
-cg_matrices = {}
-tf_cg_matrices = {}
-tf_add_cg_matrices = {}
-add_cg_matrices = {}
-for l in range(cutoff_l + 1):
-    for l1 in range(cutoff_l + 1):
-        for l2 in range(0,l1+1):
-            cg_matrices[(l,l1,l2)] = np.zeros([2*l + 1, 2*l1 + 1, 2*l2 +1])
-            for m in range(2*l+1):
-                for m1 in range(2*l1 + 1):
-                    for m2 in range(2*l2 + 1):
-                        cg_matrices[(l,l1,l2)][m,m1,m2] = clebsch.clebsch(l1,m1-l1,l2,m2-l2,l,m-l)
-                        tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)
-                        tf_add_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(np.where(cg_matrices[(l,l1,l2)]>0,1,0))
-                        add_cg_matrices[(l,l1,l2)] = np.where(cg_matrices[(l,l1,l2)]!=0,1,0)
-                    
+tf.compat.v1.disable_eager_execution()
+tf.disable_v2_behavior()
+cutoff_l = 13
+                                                                                                                                                                                                            
+# here we implement the Clebsch Gordan coefficients as                                                                                                                                                     
+# 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products                                                                                                                                      
+# Fourier coefficients                                                                                                                                                                                     
+cg_matrices = np.load('/Users/mpun/research/data/cg/CG_matrix_l=13.npy',allow_pickle=True).item()                                                                                                                 
+tf_cg_matrices = {}                                                                                                                                                                                        
+for l in range(cutoff_l + 1):                                                                                                                                                                              
+    for l1 in range(cutoff_l + 1):                                                                                                                                                                         
+        for l2 in range(0,l1+1):                                                                                                                                                                           
+            tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)                      
 
 # this function makes linear weights of given dimensions for use in taking
 # linear combinations of tensorflow variables
@@ -173,9 +165,10 @@ def hnn(dimensions,classes,l_cutoff):
 
 
 # function to train the network
-def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #data
+def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #train data
+                  test_coeffs_real,test_coeffs_imag,test_labels, #test data
                   inputs_real,inputs_imag,label,sess,loss,train_op,boltzmann_weights, # feed dict keys
-                  epochs,print_epochs): #training parameters
+                  epochs,print_epochs,cutoff_l): #training parameters
     max_training_score = training_coeffs_real[0].shape[0]
 
     epoch = -1
@@ -213,5 +206,24 @@ def train_on_data(training_coeffs_real,training_coeffs_imag,training_labels, #da
                 guess_matrix[cat] += sp.special.softmax(boltz)
             score = np.sum(results)
             print('Current train accuracy = ' + str(float(score)/max_training_score))
+        results = []
+        if epoch%print_epochs == 0:
+            guess_matrix = np.zeros([20,20])
+            print('Epoch ' + str(epoch) + ' loss: ' +str(loss_/len(test_labels)))
+            for i in range(len(test_labels)):
+                y_ = test_labels[i]
+                x_real = [test_coeffs_real[l][i] for l in range(cutoff_l+1)]
+                x_imag = [test_coeffs_imag[l][i] for l in range(cutoff_l+1)]
+                
+                fd = {i: d for i, d in zip(inputs_real,x_real)}
+                fd.update({i: d for i, d in zip(inputs_imag,x_imag)})
+                fd[label] = y_
+                boltz = sess.run(boltzmann_weights,feed_dict=fd)
+                cat = list(y_).index(1)
+                cat_guess = np.argmax(boltz)
+                results.append((cat-cat_guess) == 0)
+                guess_matrix[cat] += sp.special.softmax(boltz)
+            score = np.sum(results)
+            print('Current test accuracy = ' + str(float(score)/max_training_score))
     print('SUMMARY:\n Total epochs: ' + str(epoch) + ' \n Final score: ' + str(score))
     return loss
