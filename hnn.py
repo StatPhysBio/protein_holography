@@ -10,7 +10,7 @@ from tensorfieldnetworks.utils import FLOAT_TYPE
 #import clebsch
 import scipy as sp
 
-tf.compat.v1.disable_eager_execution()
+#tf.compat.v1.disable_eager_execution()
 
 cutoff_l = 13
 

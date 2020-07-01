@@ -56,18 +56,15 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
 # function to load premade holograms
 #
 # at the moment only works for gibbs system
-def load_holograms(k_,hologram_radius,cutoff_l):
-    file_workspace = '/usr/lusers/mpun/data/holograms'
+def load_holograms(k_,d,cutoff_l,examples_per_aa):
+    file_workspace = '/gscratch/spe/mpun/holograms'
     os.chdir(file_workspace)
-    training_f_coeffs_real = np.load('tetris_training_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
-    training_f_coeffs_imag = np.load('tetris_training_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
-    training_labels = np.load('tetris_training_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
-    test_f_coeffs_real = np.load('tetris_test_f_coeffs_real_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
-    test_f_coeffs_imag = np.load('tetris_test_f_coeffs_imag_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
-    test_labels = np.load('tetris_test_labels_k='+str(k_)+'_rh='+str(hologram_radius)+'_l_c='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
+    training_f_coeffs_real = np.load('train_hgram_real_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    training_f_coeffs_imag = np.load('train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]   
+    training_labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
 
-    return (training_f_coeffs_real,training_f_coeffs_imag,training_labels,
-            test_f_coeffs_real,test_f_coeffs_imag,test_labels)
+
+    return (training_f_coeffs_real,training_f_coeffs_imag,training_labels)
 
 #
 # function to save holograms
