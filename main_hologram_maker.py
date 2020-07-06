@@ -63,51 +63,15 @@ print(str(len(testProteins)) + ' testing proteins gathered')
 #
 # get amino acid structures from all training proteins
 #
-trainExamplesPerAa = 20
+trainExamplesPerAa = 2000
 print('Getting ' + str(trainExamplesPerAa) + ' training holograms per amino ' +
       'acid from training proteins')
 train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_shapes_from_protein_list(trainProteins,trainDir,trainExamplesPerAa,d,rH,k,cutoffL)
 
-
-#
-# load premade dataset
-#
-#cutoff_l = 4
-#rh = 5.0
-#k = 0.1
-#(train_hgrams_real,train_hgrams_imag,train_labels,
-# test_hgrams_real,test_hgrams_imag,test_labels) = hologram.load_holograms(k,rh,cutoff_l)
-
-
-# PUT THIS IN LATER ONCE NETWORK WORKS
-#tf.reset_default_graph()
-
-
-network,label,inputs_real,inputs_imag,loss,boltzmann_weights = hnn.hnn([4,10,10],AA_NUM,cutoffL)
-
-optim = tf.train.AdamOptimizer(learning_rate=0.001)
-train_op = optim.minimize(loss)
-
-print('GRAPH:\n')
-print(tf.Graph())
-
-print('Initializing the network')
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
-
-print('Examine the data')
-
-print('Training network')
-# train the network
-LAYER_0 = 0
-REAL = 0
-IMAG = 1
-epochs = 1000
-print_epoch = 100
-hnn.train_on_data(train_hgrams_real,train_hgrams_imag,train_labels,
-                  inputs_real,inputs_imag,label,
-                  sess,loss,train_op,boltzmann_weights,
-                  epochs,print_epoch,cutoffL)
+hologram_dir = '/gscratch/spe/mpun/holograms/'
+hologram.save(train_hgrams_real,'train_hgram_real_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
+hologram.save(train_hgrams_imag,'train_hgram_imag_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
+hologram.save(train_labels,'train_labels_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
 
 print('Terminating successfully')
     
