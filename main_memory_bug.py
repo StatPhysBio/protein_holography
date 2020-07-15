@@ -6,6 +6,12 @@
 from config import Config
 config = Config()
 
+import resource
+soft, hard = 10**9, 10**9
+# soft, hard = 10**8, 10**8   # uncommenting this allows program to finish
+resource.setrlimit(resource.RLIMIT_DATA,(soft, hard))
+
+
 # 
 # Import statements
 #
@@ -51,7 +57,9 @@ examples_per_aa = 20
 #cutoff_l = 4
 #rh = 5.0
 #k = 0.1
-(train_hgrams_real,train_hgrams_imag,train_labels)  = hologram.load_holograms(k,d,cutoffL,examples_per_aa)
+holograms_dir = os.path.join(config.get('datadir'), 'holograms/')
+(train_hgrams_real,train_hgrams_imag,train_labels)  = hologram.load_holograms(
+    k,d,cutoffL,examples_per_aa, file_workspace=holograms_dir)
 
 
 network,label,inputs_real,inputs_imag,loss,boltzmann_weights = hnn.hnn([4,10,10],AA_NUM,cutoffL)
@@ -75,6 +83,7 @@ REAL = 0
 IMAG = 1
 epochs = 1000
 print_epoch = 100
+
 hnn.train_on_data(train_hgrams_real,train_hgrams_imag,train_labels,
                   inputs_real,inputs_imag,label,
                   sess,loss,train_op,boltzmann_weights,
