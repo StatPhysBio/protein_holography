@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import linearity
 import nonlinearity
-import hnn
 import os
 
 L_MAX = 1
@@ -14,8 +13,7 @@ linear_layer = linearity.Linearity(l_dims, 0, L_MAX)
 
 linear_input = {}
 for l in range(L_MAX + 1):
-    linear_input[l] = tf.convert_to_tensor([tf.complex(np.random.random(2*l+1),
-                                                       np.random.random(2*l+1)) 
+    linear_input[l] = tf.convert_to_tensor([tf.complex(np.random.random(2*l+1),np.random.random(2*l+1)) 
                                            for i in range(in_dims[l])],dtype=tf.dtypes.complex64)
 
 print('Linear input:')
@@ -43,26 +41,8 @@ for l in range(L_MAX + 1):
 nonlinear_layer = nonlinearity.Nonlinearity(L_MAX, tf_cg_matrices)
 
 nonlinear_input = linear_output
-
-print('nonlinear output')
-print(nonlinear_layer)
 nonlinear_output = nonlinear_layer(nonlinear_input)
 
 print(nonlinear_output)
-
-print('Testing hnn model')
-num_layers = 3
-L_MAX = 2
-hidden_l_dims = []
-for i in range(num_layers):
-    curr_l_dims = []
-    for l in range(L_MAX + 1):
-        curr_l_dims.append(np.random.randint(low=1,high=5))
-    hidden_l_dims.append(curr_l_dims)
-print('Making network with L_MAX=' + str(L_MAX) + ' with '  + str(num_layers) + ' layers with hidden dimensions ' + 
-      str(hidden_l_dims))
-
-network = hnn.hnn(L_MAX, hidden_l_dims, num_layers, tf_cg_matrices)
-
 
 print('Terminating successfully')
