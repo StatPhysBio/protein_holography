@@ -5,7 +5,7 @@ import nonlinearity
 import hnn
 import os
 
-cg_file = 'CG_matrix_l=13.npy'
+cg_file = 'CG_matrix_l=5.npy'
 cg_matrices = np.load(cg_file, allow_pickle=True).item()
 L_MAX = 6
 tf_cg_matrices = {}
