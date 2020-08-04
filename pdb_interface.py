@@ -22,7 +22,7 @@ def get_proteins_from_dir(protein_dir):
 def sample_amino_acid_from_protein(protein,aa):
     parser = pdb.PDBParser(QUIET=True)
     struct = parser.get_structure(protein + 'struct', protein + '.pdb')
-    residues = [x for x in pdb.Selection.unfold_entities(struct,'R') if x.resname == aa]
+    residues = [x for x in pdb.Selection.unfold_entities(struct,'R') if (x.resname == aa and 'CA' in x)]
 
     # if the given amino acid is not found print an error and return None
     if len(residues) == 0:
@@ -139,7 +139,7 @@ def get_amino_acid_shapes_from_protein_list(protein_list,
     os.chdir(protein_dir)
     
     # list of amino acids
-    amino_acids = protein.aa_to_ind.keys()
+    amino_acids = list(protein.aa_to_ind.keys())
     # a list of the amino acids we need to take samples of
     aa_to_sample = amino_acids*instances
 

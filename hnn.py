@@ -1,27 +1,38 @@
+
 #
 # Holographic neural network module for rotationally invariant
 # holographic machine learning
 #
 
-import tensorflow as tf
+from config import Config
+config = Config()
+
+import tensorflow.compat.v1 as tf
 import numpy as np
 from tensorfieldnetworks.utils import FLOAT_TYPE
-import clebsch
+#import clebsch
 import scipy as sp
+import os
 
-tf.compat.v1.disable_eager_execution()
-tf.disable_v2_behavior()
+#tf.compat.v1.disable_eager_execution()
+
 cutoff_l = 13
-                                                                                                                                                                                                            
-# here we implement the Clebsch Gordan coefficients as                                                                                                                                                     
-# 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products                                                                                                                                      
-# Fourier coefficients                                                                                                                                                                                     
-cg_matrices = np.load('/Users/mpun/research/data/cg/CG_matrix_l=13.npy',allow_pickle=True).item()                                                                                                                 
-tf_cg_matrices = {}                                                                                                                                                                                        
-for l in range(cutoff_l + 1):                                                                                                                                                                              
-    for l1 in range(cutoff_l + 1):                                                                                                                                                                         
-        for l2 in range(0,l1+1):                                                                                                                                                                           
-            tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)                      
+
+# here we implement the Clebsch Gordan coefficients as
+# 2l+1 x 2(l1)+1 x 2(l2)+1 matrices for use in taking direct products
+# Fourier coefficients
+
+
+cg_file = os.path.join(config.get('datadir'), 'CG_matrix_l=13.npy')
+cg_matrices = np.load(cg_file, allow_pickle=True).item()
+
+tf_cg_matrices = {}
+for l in range(cutoff_l + 1):
+    for l1 in range(cutoff_l + 1):
+        for l2 in range(0,l1+1):
+            tf_cg_matrices[(l,l1,l2)] = tf.convert_to_tensor(cg_matrices[(l,l1,l2)],dtype=tf.complex64)
+                        
+                    
 
 # this function makes linear weights of given dimensions for use in taking
 # linear combinations of tensorflow variables

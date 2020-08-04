@@ -53,44 +53,23 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
 
 
 
-
-# function to load premade holograms                                                                                                                                                                        
-#                                                                                                                                                                                                           
-# at the moment only works for gibbs system                                                                                                                                                                 
+# function to load premade holograms
+#
+# at the moment only works for gibbs system
 def load_holograms(k_,d,cutoff_l,examples_per_aa):
-    file_workspace = '/Users/mpun/research/data/holograms'
+    file_workspace = '/gscratch/spe/mpun/holograms'
     os.chdir(file_workspace)
-    training_f_coeffs_real = np.load('train_hgram_real_example_examplesPerAA=' 
-                                     + str(examples_per_aa) + '_k='+str(k_) 
-                                     + '_d='+str(d) + '_l=' + str(cutoff_l) 
-                                     + '.npy',allow_pickle=True,encoding='latin1')[()]
-    training_f_coeffs_imag = np.load('train_hgram_imag_example_examplesPerAA=' 
-                                     + str(examples_per_aa) + '_k='+str(k_) 
-                                     + '_d='+str(d)+'_l=' + str(cutoff_l) 
-                                     + '.npy',allow_pickle=True,encoding='latin1')[()]
-    training_labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa) 
-                              + '_k='+str(k_) + '_d='+str(d) + '_l='+str(cutoff_l) 
-                              + '.npy',allow_pickle=True,encoding='latin1')
+    training_f_coeffs_real = np.load('train_hgram_real_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
+    training_f_coeffs_imag = np.load('train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]   
+    training_labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')
 
 
     return (training_f_coeffs_real,training_f_coeffs_imag,training_labels)
 
-def load_holograms_test(k_,d,cutoff_l,examples_per_aa):
-    file_workspace = '/Users/mpun/research/data/holograms'
-    os.chdir(file_workspace)
-    test_f_coeffs_real = np.load('test_hgram_real_example_examplesPerAA=' 
-                                     + str(examples_per_aa) + '_k='+str(k_) 
-                                     + '_d='+str(d) + '_l=' + str(cutoff_l) 
-                                     + '.npy',allow_pickle=True,encoding='latin1')[()]
-    test_f_coeffs_imag = np.load('test_hgram_imag_example_examplesPerAA=' 
-                                     + str(examples_per_aa) + '_k='+str(k_) 
-                                     + '_d='+str(d)+'_l=' + str(cutoff_l) 
-                                     + '.npy',allow_pickle=True,encoding='latin1')[()]
-    test_labels = np.load('test_labels_examplesPerAA=' + str(examples_per_aa) 
-                              + '_k='+str(k_) + '_d='+str(d) + '_l='+str(cutoff_l) 
-                              + '.npy',allow_pickle=True,encoding='latin1')
+#
+# function to save holograms
+#
 
-
-    return (test_f_coeffs_real,test_f_coeffs_imag,test_labels)
-
+def save(holograms,filename,directory):
+    np.save(directory+filename,holograms,allow_pickle=True)
 
