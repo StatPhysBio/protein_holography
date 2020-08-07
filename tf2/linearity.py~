@@ -26,7 +26,7 @@ class Linearity(tf.keras.layers.Layer):
         # lists for the input and output dims with l indexing the list
         # input_dims := c(l,i-1)
         # output_dims := c(l,i) 
-        input_dims = [input_shape[l][0] for l in range(self.L_MAX + 1)]
+        input_dims = [input_shape[l][1] for l in range(self.L_MAX + 1)]
         output_dims = self.l_dims
 
         weights_real = {}
@@ -55,6 +55,6 @@ class Linearity(tf.keras.layers.Layer):
     def call(self, input): 
         output = {}
         for l in range(self.L_MAX + 1):
-            print(input[l])
+#            print(input[l])
             output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])
         return output

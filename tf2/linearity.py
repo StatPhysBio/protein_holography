@@ -55,6 +55,6 @@ class Linearity(tf.keras.layers.Layer):
     def call(self, input): 
         output = {}
         for l in range(self.L_MAX + 1):
-            print(input[l])
+#            print(input[l])
             output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])
         return output

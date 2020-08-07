@@ -20,7 +20,7 @@ class hnn(tf.keras.Model):
         for i in range(num_layers):
             temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
-        temp_layers.append(tf.keras.layers.Dense(num_classes))
+        temp_layers.append(tf.keras.layers.Dense(num_classes,kernel_initializer=tf.keras.initializers.Orthogonal()))
         self.layers_ = temp_layers
 
     @tf.function
@@ -31,9 +31,13 @@ class hnn(tf.keras.Model):
         scalar_output = curr_nodes[0]
         scalar_out_real = tf.math.real(scalar_output)
         scalar_out_imag = tf.math.imag(scalar_output)
-        print('Scalar output: ')
-        print(scalar_output)
-        scalar_output = tf.squeeze(tf.concat([scalar_out_real,scalar_out_imag], axis=0))
+#        print('Scalar output: ')
+#        print(scalar_output)
+#        print('Real output')
+#        print(scalar_out_real)
+        scalar_output = tf.squeeze(tf.concat([scalar_out_real,scalar_out_imag], axis=1))
+#        print('Concatenated output')
+#        print(scalar_output)
         output = self.layers_[-1](scalar_output)
         return output
             

@@ -8,7 +8,7 @@ import numpy as np
 #from tensorfieldnetworks.utils import FLOAT_TYPE
 import clebsch
 
-cutoff_l = 6
+cutoff_l = 10
 
 print('Gathering cg coefficients')
 
@@ -34,7 +34,7 @@ for l in range(cutoff_l + 1):
 
 
 import os
-os.chdir('/Users/mpun/research/code/hnn_tf2')
+os.chdir('/Users/mpun/research/code/protein_holography/tf2')
 np.save('CG_matrix_l='+str(cutoff_l)+'.npy',cg_matrices)
 
 print('Terminating')
