@@ -13,7 +13,6 @@ import nonlinearity
 import hnn
 import os
 
-
 L_MAX = 3
 
 # load clebsch gordan coefficients
@@ -28,7 +27,7 @@ for l in range(L_MAX + 1):
                     
 
 # network parameters
-num_layers = 3
+num_layers = 0
 num_aa = 20
 hidden_l_dims = []
 for i in range(num_layers):
@@ -47,9 +46,9 @@ def loss_fn(truth, pred):
         labels = truth,
         logits = pred)
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1.e-3)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
-network.compile(optimizer=optimizer, loss=loss_fn)
+network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy'])
 
 # load premade holograms
 k = 0.0001
@@ -70,11 +69,23 @@ labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa) + '_k=' + 
                  allow_pickle=True,encoding='latin1')
 
 
-#print('Running network via predict')
-#print(network.predict(train_hgrams,batch_size=50))
+print('Running network via predict')
+print(network.predict(train_hgrams,batch_size=50))
+pred_i = network.predict(train_hgrams,batch_size=10)
+print(network.summary())
+
+print(network.weights)
+
+initial_weights = network.weights
+
 
 print('Training network')
-network.fit(x=train_hgrams,y=labels,batch_size=400,epochs=1000,shuffle=True)
+network.fit(x=train_hgrams,y=labels,batch_size=1,epochs=20,shuffle=True)
+pred_f = network.predict(train_hgrams,batch_size=10)
+final_weights = network.weights
 
-
+for i in range(len(network.weights)):
+    print(final_weights[i])
+    print(initial_weights[i])
+print(pred_f - pred_i)
 print('Terminating successfully')

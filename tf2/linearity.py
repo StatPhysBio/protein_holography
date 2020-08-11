@@ -31,30 +31,42 @@ class Linearity(tf.keras.layers.Layer):
 
         weights_real = {}
         weights_imag = {}
-
+        weights_complex = {}
         for l in range(self.L_MAX + 1):
             weights_real[l] = self.add_weight(shape=[input_dims[l],
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
+                                              trainable=True,
                                               name="W_real_" + str(self.layer_id) + "_" + str(l))
 
             weights_imag[l] = self.add_weight(shape=[input_dims[l],
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
+                                              trainable=True,
                                               name="W_imag_" + str(self.layer_id) + "_" + str(l))
 
         self.weights_ = {}
+        self.weights_real = {}
+        self.weights_imag = {}
         for l in range(self.L_MAX + 1):
-            self.weights_[l] = tf.complex(weights_real[l],weights_imag[l],
-                                     name="W_complex" + str(self.layer_id) + "_" + str(l))
-        
-    @tf.function
+            self.weights_real[l] = weights_real[l]
+            self.weights_imag[l] = weights_imag[l]
+ #           self.weights_[l] = tf.Variable(tf.complex(weights_real[l],weights_imag[l],
+  #                                        name="W_complex" + str(self.layer_id) + "_" + str(l)),
+   #                                        trainable=True,
+    #                                       name="W_complex_" + str(self.layer_id) + "_" + str(l) + "_extra")
+
+
+
     # compute the layer via tensor contraction
+    @tf.function
     def call(self, input): 
         output = {}
         for l in range(self.L_MAX + 1):
-#            print(input[l])
-            output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])
+#            output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])
+            output[l] = tf.einsum("ij,bim->bjm",tf.complex(self.weights_real[l],self.weights_imag[l],
+                                          name="W_complex" + str(self.layer_id) + "_" + str(l))
+                                  ,input[l])
         return output

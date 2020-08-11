@@ -32,8 +32,9 @@ class Nonlinearity(tf.keras.layers.Layer):
                     dim1 = product.shape[1]
                     dim2 = product.shape[2]
                     output[L].append(tf.reshape(product,[batch_size,dim1*dim2,2*L+1]))
+        print(output)
         for L in range(self.L_MAX + 1):
-            output[L] = tf.concat(output[L],axis=0)
+            output[L] = tf.concat(output[L],axis=1)
         return output
 
 
