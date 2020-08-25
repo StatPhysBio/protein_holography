@@ -17,11 +17,11 @@ import clebsch
 L_MAX = 6
 
 # load clebsch gordan coefficients
-cg_file = 'CG_matrix_l=10.npy'
-tf_cg_matrices = clebsch.load_clebsch(cg_file)                    
+cg_file = '/gscratch/spe/mpun/protein_holography/clebsch/CG_matrix_l=10.npy'
+tf_cg_matrices = clebsch.load_clebsch(cg_file,L_MAX)
 
 # network parameters
-num_layers = 5
+num_layers = 4
 num_aa = 20
 hidden_l_dims = []
 for i in range(num_layers):
@@ -43,80 +43,54 @@ def loss_fn(truth, pred):
         labels = truth,
         logits = pred)
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
 
 network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy'])
 
 # load premade holograms
-k = 0.0001
+k = 0.001
 d = 10.0
 examples_per_aa = 1000
-examples_per_aa_val = 100
+examples_per_aa_val = 1000
 d_val = 10.0
 
+
+hologram_dir = "/gscratch/spe/mpun/holograms"
 print('Loading test input to model')
-train_hgrams_real = np.load('train_hgram_real_example_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy'
+train_hgrams_real = np.load(hologram_dir + '/train_hgram_real_example_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy'
                             ,allow_pickle=True,encoding='latin1')[()]
-train_hgrams_imag = np.load('train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy'
+train_hgrams_imag = np.load(hologram_dir + '/train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy'
                             ,allow_pickle=True,encoding='latin1')[()]
 train_hgrams = {}
 for l in range(L_MAX + 1):
     train_hgrams[l] = (train_hgrams_real[l] + 1j * train_hgrams_imag[l]).astype("complex64")
 
 print('Loading vaalidation input to model')
-val_hgrams_real = np.load('train_hgram_real_example_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy'
+val_hgrams_real = np.load(hologram_dir + '/train_hgram_real_example_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy'
                             ,allow_pickle=True,encoding='latin1')[()]
-val_hgrams_imag = np.load('train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy'
+val_hgrams_imag = np.load(hologram_dir + '/train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy'
                             ,allow_pickle=True,encoding='latin1')[()]
 val_hgrams = {}
 for l in range(L_MAX + 1):
     val_hgrams[l] = (val_hgrams_real[l] + 1j * val_hgrams_imag[l]).astype("complex64")
 
 
-labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy',
+labels = np.load(hologram_dir + '/train_labels_examplesPerAA=' + str(examples_per_aa) + '_k=' + str(k) + '_d=' + str(d) + '_l=' + str(L_MAX) + '.npy',
                  allow_pickle=True,encoding='latin1')
 
 
 
-val_labels = np.load('train_labels_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy',                 allow_pickle=True,encoding='latin1')
+val_labels = np.load(hologram_dir + '/train_labels_examplesPerAA=' + str(examples_per_aa_val) + '_k=' + str(k) + '_d=' + str(d_val) + '_l=' + str(L_MAX) + '.npy',                 allow_pickle=True,encoding='latin1')
 
 
 print('Running network via predict')
-#print(network.predict(train_hgrams,batch_size=32))
-pred_i = network.predict(train_hgrams,batch_size=2)
-print(network.summary())
+#network.predict(train_hgrams,batch_size=1)
 
-#print(network.weights)
-
-#initial_weights = network.weights
-#i_weights = network.get_weights()
+#print(network.summary())
 
 print('Training network')
-network.fit(x=train_hgrams,y=labels,batch_size=2,epochs=5,shuffle=True,
+network.fit(x=train_hgrams,y=labels,batch_size=2,epochs=1,shuffle=True,
             validation_data=(val_hgrams,val_labels))
 network.save_weights('./saved_weights/weights')
-from keras import backend as K
-K.set_value(network.optimizer.learning_rate, 0.0001)
-network.fit(x=train_hgrams,y=labels,batch_size=1,epochs=5,shuffle=True,
-            validation_data=(val_hgrams,val_labels))
-network.fit(x=train_hgrams,y=labels,batch_size=4,epochs=10,shuffle=True,
-            validation_data=(val_hgrams,val_labels))
 
-#pred_f = network.predict(train_hgrams,batch_size=10)
-#final_weights = network.weights
-#f_weights = network.get_weights()
-
-
-#print('Initial weights = ' +str(i_weights))
-#print('Final weights = ' +str(f_weights))
-
-
-#for i in range(len(network.weights)):
-#    print('Difference in weights: ')
-#    print(final_weights[i] - initial_weights[i])
-#    print('\n')
-
-#print('Difference in prediction:')
-#print(pred_f - pred_i)
-#print('\n')
 print('Terminating successfully')

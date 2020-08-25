@@ -4,6 +4,8 @@
 
 from sympy.physics.quantum.cg import CG
 import sympy
+import numpy as np
+import tensorflow as tf
 
 # this class and function implements the Clebsch Gordan coefficients
 # as a function that takes the parameters of a Clebsch Gordan coefficient
@@ -28,7 +30,7 @@ def clebsch(j1,m1,j2,m2,j3,m3):
 
 clebsch = Memoize(clebsch)
 
-def load_clebsch(cg_file):
+def load_clebsch(cg_file,L_MAX):
     
     # load clebsch gordan coefficients
     cg_matrices = np.load(cg_file, allow_pickle=True).item()

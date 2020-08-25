@@ -51,13 +51,9 @@ class Linearity(tf.keras.layers.Layer):
         self.weights_real = {}
         self.weights_imag = {}
         for l in range(self.L_MAX + 1):
-            self.weights_real[l] = weights_real[l]
-            self.weights_imag[l] = weights_imag[l]
- #           self.weights_[l] = tf.Variable(tf.complex(weights_real[l],weights_imag[l],
-  #                                        name="W_complex" + str(self.layer_id) + "_" + str(l)),
-   #                                        trainable=True,
-    #                                       name="W_complex_" + str(self.layer_id) + "_" + str(l) + "_extra")
-
+            self.weights_real[str(l)] = weights_real[l]
+            self.weights_imag[str(l)] = weights_imag[l]
+            
 
 
     # compute the layer via tensor contraction
@@ -66,7 +62,7 @@ class Linearity(tf.keras.layers.Layer):
         output = {}
         for l in range(self.L_MAX + 1):
 #            output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])
-            output[l] = tf.einsum("ij,bim->bjm",tf.complex(self.weights_real[l],self.weights_imag[l],
+            output[l] = tf.einsum("ij,bim->bjm",tf.complex(self.weights_real[str(l)],self.weights_imag[str(l)],
                                           name="W_complex" + str(self.layer_id) + "_" + str(l))
                                   ,input[l])
         return output
