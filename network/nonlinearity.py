@@ -29,7 +29,7 @@ class Nonlinearity(tf.keras.layers.Layer):
                 for L in range(l2-l1,np.minimum(self.L_MAX,l1+l2) + 1):
                     product = tf.einsum('Mnm,bim,bjn->bijM',
                                         self.cg_matrices[(L,l2,l1)],input[l1],input[l2])
-                    batch_size = product.shape[0]
+                    batch_size = -1
                     dim1 = product.shape[1]
                     dim2 = product.shape[2]
                     output[L].append(tf.reshape(product,[batch_size,dim1*dim2,2*L+1]))

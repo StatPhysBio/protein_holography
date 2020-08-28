@@ -1,7 +1,7 @@
 #
 # Python module to implement equivariant neural network
 # based on Clebsch-Gordan networks. This module uses linearity.py
-# and nonlinearity.py to implement the linear and nonlinear opeartions
+# and nonlinearity.py to implement the linear and nonlinear operations
 # of CG networks. Then it implements a dense layer at the end to 
 # classify the scalar output of every layer in the CG network.
 #
