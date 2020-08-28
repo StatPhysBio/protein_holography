@@ -56,8 +56,7 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
 # function to load premade holograms
 #
 # at the moment only works for gibbs system
-def load_holograms(k_,d,cutoff_l,examples_per_aa):
-    file_workspace = '/gscratch/spe/mpun/holograms'
+def load_holograms(k_,d,cutoff_l,examples_per_aa, file_workspace = '/gscratch/spe/mpun/holograms'):
     os.chdir(file_workspace)
     training_f_coeffs_real = np.load('train_hgram_real_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]
     training_f_coeffs_imag = np.load('train_hgram_imag_example_examplesPerAA=' + str(examples_per_aa) + '_k='+str(k_)+'_d='+str(d)+'_l='+str(cutoff_l)+'.npy',allow_pickle=True,encoding='latin1')[()]   
