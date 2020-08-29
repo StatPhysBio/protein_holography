@@ -50,6 +50,12 @@ parser.add_argument('--outputdir',
                     type=str,
                     default=default_outputdir,
                     help='data directory')
+parser.add_argument('--verbosity',
+                    dest='verbosity',
+                    type=int,
+                    default=1,
+                    help='Verbosity mode')
+
 
 args =  parser.parse_args()
 
@@ -88,7 +94,7 @@ ds_train = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 ds_val = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 
 # training dataset shouldn't be truncated unless testing
-ds_train_trunc = ds_train.batch(2) #.take(50)
+ds_train_trunc = ds_train.batch(2).take(50)
 ds_val_trunc = ds_val.batch(2).take(10)
 
 network.evaluate(ds_train.batch(1).take(1))
@@ -113,6 +119,7 @@ try:
         logging.error("Unable to load weights.")
     network.fit(ds_train_trunc, epochs=10, shuffle=True,
                 validation_data=ds_val_trunc, 
+                verbose = args.verbosity,
                 callbacks=[model_checkpoint_callback, early_stopping])
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")

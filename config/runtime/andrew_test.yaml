@@ -1,7 +1,7 @@
 group: spe
 nodes: 1
 cores: 4
-walltime: '3:00:00'
+walltime: '4:00:00'
 mem: 20G
 jobname: 'hgram_l={l}_k={k}_d={d}_{date}'
 outputdir: ./output
@@ -17,4 +17,4 @@ parameters:
 
 command: |
   source activate tensorflowenv
-  python -u network/train.py -L {l} -k {k} -d {d} --datadir {datadir} --outputdir {outputdir}
+  python -u network/train.py -L {l} -k {k} -d {d} --datadir {datadir} --outputdir {outputdir} --verbosity 2
