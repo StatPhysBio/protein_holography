@@ -9,7 +9,7 @@ datadir: ./data
 
 parameters:
   # frequencies to be used to make the holograms
-  k: [0.0001]
+  k: [0.01, 0.001, 0.0001]
   # maximum frequencies used in fourier transforms
   l: [6]
   # noise distances
