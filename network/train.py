@@ -94,8 +94,8 @@ ds_train = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 ds_val = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 
 # training dataset shouldn't be truncated unless testing
-ds_train_trunc = ds_train.batch(2).take(50)
-ds_val_trunc = ds_val.batch(2).take(10)
+ds_train_trunc = ds_train.batch(2) #.take(50)
+ds_val_trunc = ds_val.batch(2).take(50)
 
 network.evaluate(ds_train.batch(1).take(1))
 network.summary()
