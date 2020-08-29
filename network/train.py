@@ -54,8 +54,8 @@ parser.add_argument('--outputdir',
 args =  parser.parse_args()
 
 logging.info("GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
-tf.config.threading.set_intra_op_parallelism_threads(4)
-tf.config.threading.set_inter_op_parallelism_threads(1)
+#tf.config.threading.set_intra_op_parallelism_threads(4)
+#tf.config.threading.set_inter_op_parallelism_threads(4)
 
 cg_file = os.path.join(args.datadir, "CG_matrix_l=10.npy")
 hologram_dir = os.path.join(args.datadir, "holograms")
@@ -88,7 +88,7 @@ ds_train = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 ds_val = get_dataset(hologram_dir, args.e, args.k, args.d, args.L)
 
 # training dataset shouldn't be truncated unless testing
-ds_train_trunc = ds_train.batch(2).take(50)
+ds_train_trunc = ds_train.batch(2) #.take(50)
 ds_val_trunc = ds_val.batch(2).take(10)
 
 network.evaluate(ds_train.batch(1).take(1))
