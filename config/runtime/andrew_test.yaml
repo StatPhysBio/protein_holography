@@ -1,20 +1,20 @@
 group: spe
 nodes: 1
-cores: 10
-walltime: '3:00:00'
-mem: 120G
+cores: 4
+walltime: '4:00:00'
+mem: 20G
 jobname: 'hgram_l={l}_k={k}_d={d}_{date}'
-outputdir: ../hnn_tests
-datadir: ../data
+outputdir: ./output
+datadir: ./data
 
 parameters:
   # frequencies to be used to make the holograms
-  k: [0.0001]
+  k: [0.01, 0.001, 0.0001]
   # maximum frequencies used in fourier transforms
   l: [6]
   # noise distances
-  d: [5]
+  d: [10.0]
 
 command: |
   source activate tensorflowenv
-  python -u main_memory_bug.py {l} {k} {d} --config {config}
+  python -u network/train.py -L {l} -k {k} -d {d} --datadir {datadir} --outputdir {outputdir} --verbosity 2
