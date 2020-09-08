@@ -7,6 +7,9 @@ output/
 *.pyc
 *.slurm
 
+#emacs autosave
+*~
+
 # C extensions
 *.so
 
