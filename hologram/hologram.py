@@ -71,5 +71,5 @@ def load_holograms(k_,d,cutoff_l,examples_per_aa):
 #
 
 def save(holograms,filename,directory):
-    np.save(directory+filename,holograms,allow_pickle=True)
+    np.save(directory+'/'+filename,holograms,allow_pickle=True)
 

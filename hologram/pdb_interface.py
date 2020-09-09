@@ -144,6 +144,7 @@ def get_amino_acid_shapes_from_protein_list(protein_list,
                                             r_h,
                                             k,
                                             l_max):
+    currdir = os.getcwd()
     os.chdir(protein_dir)
     
     # list of amino acids
@@ -241,7 +242,7 @@ def get_amino_acid_shapes_from_protein_list(protein_list,
     for l in range(l_max + 1):
         hologram_coeffs_real[l] = np.real(hologram_coeffs[l])
         hologram_coeffs_imag[l] = np.imag(hologram_coeffs[l])
-        
+    os.chdir(currdir)     
     return hologram_coeffs_real,hologram_coeffs_imag,hologram_labels
                                                               
         
@@ -267,6 +268,7 @@ def get_amino_acid_aa_shapes_from_protein_list(protein_list,
                                             r_h,
                                             k,
                                             l_max):
+    currdir = os.getcwd()
     os.chdir(protein_dir)
     
     # list of amino acids
@@ -370,7 +372,7 @@ def get_amino_acid_aa_shapes_from_protein_list(protein_list,
     for l in range(l_max + 1):
         hologram_coeffs_real[l] = np.real(hologram_coeffs[l])
         hologram_coeffs_imag[l] = np.imag(hologram_coeffs[l])
-        
+    os.chdir(currdir)
     return hologram_coeffs_real,hologram_coeffs_imag,hologram_labels
                                                               
         

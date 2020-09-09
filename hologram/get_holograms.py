@@ -10,7 +10,7 @@ import pdb_interface as pdb_int
 import hologram
 import numpy as np
 from argparse import ArgumentParser
-import imp
+
 
 
 print('Finished importing modules')
@@ -18,16 +18,15 @@ print('Finished importing modules')
 # constants
 AA_NUM = 20
 
-#default_proteindir = os.path.join(os.path.dirname(__file__), "../data/proteins")
-#default_outputdir = os.path.join(os.path.dirname(__file__), "../output/holograms")
+default_proteindir = os.path.join(os.path.dirname(__file__), "../data/proteins")
+default_outputdir = os.path.join(os.path.dirname(__file__), "../output")
+default_hgramdir = os.path.join(os.path.dirname(__file__), "../data/holograms")
 
-#default_proteindir = '../../data/proteins'
-#default_outputdir = '../../output/holograms'
 
 
 # for testing purposes
-default_proteindir = '/gscratch/stf/mpun/data/casp11/training30/'
-default_outputdir = '/gscratch/spe/mpun/protein_holography/data/holograms/'
+#default_proteindir = '/gscratch/stf/mpun/data/casp11/training30/'
+#default_outputdir = '/gscratch/spe/mpun/protein_holography/data/holograms/'
 
 
 parser = ArgumentParser()
@@ -55,12 +54,17 @@ parser.add_argument('--proteindir',
                     dest='proteindir',
                     type=str,
                     default=default_proteindir,
-                    help='data directory')
+                    help='protein directory')
 parser.add_argument('--outputdir',
                     dest='outputdir',
                     type=str,
                     default=default_outputdir,
-                    help='data directory')
+                    help='log/error directory')
+parser.add_argument('--hgramdir',
+                    dest='hgramdir',
+                    type=str,
+                    default=default_hgramdir,
+                    help='hgram directory')
 parser.add_argument('-e',
                     dest='e',
                     type=int,
@@ -75,8 +79,9 @@ parser.add_argument('--ch',
 args =  parser.parse_args()
 
 
-param_tag = "ch={}_e={}_k={}_rH={}_d={}_l={}".format(args.ch, args.e, args.k,
-                                                     args.rH, args.d, args.L)
+param_tag = "ch={}_e={}_l={}_k={}_d={}__rH={}".format(args.ch, args.e,
+                                                      args.L, args.k,
+                                                      args.d, args.rH)
 
 
 
@@ -100,9 +105,12 @@ print('Getting ' + str(args.e) + ' training holograms per amino ' +
 train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
 
 print('Saving ' + param_tag + ' to ' + args.outputdir)
-hologram.save(train_hgrams_real, 'hgram_real_' + param_tag, args.outputdir)
-hologram.save(train_hgrams_imag, 'hgram_imag_' + param_tag, args.outputdir)
-hologram.save(train_labels,'labels_' + param_tag, args.outputdir)
+
+os.system('pwd')
+os.system('ls')
+hologram.save(train_hgrams_real, 'hgram_real_' + param_tag, args.hgramdir)
+hologram.save(train_hgrams_imag, 'hgram_imag_' + param_tag, args.hgramdir)
+hologram.save(train_labels,'labels_' + param_tag, args.hgramdir)
 
 
 print('Terminating successfully')
