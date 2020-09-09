@@ -3,8 +3,12 @@
 # holographic machine learning techniques
 #
 
+# new import statements
+import sys
+from protein_dir_parse import get_proteins_from_dir
+
 # 
-# Import statements
+# old Import statements
 #
 print('Importing modules')
 import os
@@ -51,7 +55,7 @@ testDir = casp7Dir + '/val'
 # get train and test proteins
 #
 print('Getting training proteins from ' + trainDir)
-trainProteins = pdb_int.get_proteins_from_dir(trainDir)
+trainProteins = get_proteins_from_dir(trainDir)
 np.random.shuffle(trainProteins)
 print(str(len(trainProteins)) + ' training proteins gathered')
 #print('Gathering testing proteins from ' + testDir)
@@ -64,7 +68,7 @@ print(str(len(trainProteins)) + ' training proteins gathered')
 #
 # get amino acid structures from all training proteins
 #
-trainExamplesPerAa = 128
+trainExamplesPerAa = 4
 print('Getting ' + str(trainExamplesPerAa) + ' training holograms per amino ' +
       'acid from training proteins')
 train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,trainDir,trainExamplesPerAa,d,rH,k,cutoffL)
@@ -73,6 +77,7 @@ hologram_dir = '/gscratch/spe/mpun/holograms/'
 hologram.save(train_hgrams_real,'aa_hgram_noCenter_real_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
 hologram.save(train_hgrams_imag,'aa_hgram_noCenter_imag_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
 hologram.save(train_labels,'aa_labels_noCenter_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
+
 
 print('Terminating successfully')
     

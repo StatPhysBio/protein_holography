@@ -7,32 +7,12 @@ import protein
 import Bio.PDB as pdb
 import numpy as np
 import hologram as hgm
+from geo import cartesian_to_spherical
+from sample_protein import sample_amino_acid_from_protein
 
 DIMENSIONS = 3
-CHANNEL_NUM = len(protein.el_to_ind.keys())
-CHANNEL_NUM_AA = len(protein.aa_to_ind.keys())
-
-# get all protein names from the pdb files in a given directory
-def get_proteins_from_dir(protein_dir):
-    os.chdir(protein_dir)
-    files = os.listdir('.')
-    proteins = [x[:-4] for x in files if 'pdb' in x[-3:]]
-    return proteins
-
-# function to sample a random residue of a given amino acid type from a protein structure
-def sample_amino_acid_from_protein(protein,aa):
-    parser = pdb.PDBParser(QUIET=True)
-    struct = parser.get_structure(protein + 'struct', protein + '.pdb')
-    residues = [x for x in pdb.Selection.unfold_entities(struct,'R') if (x.resname == aa and 'CA' in x)]
-
-    # if the given amino acid is not found print an error and return None
-    if len(residues) == 0:
-        print('ERROR: Amino acid ' + str(aa) + ' not found in protein ' + str(protein))
-        return None
-
-    # sample a random residue from the residues found
-    np.random.shuffle(residues)
-    return residues[0]
+EL_CHANNEL_NUM = len(protein.el_to_ind.keys())
+AA_CHANNEL_NUM = len(protein.aa_to_ind.keys())
 
 # check validity of a given residue
 def check_CA_in_res(res):
@@ -41,105 +21,78 @@ def check_CA_in_res(res):
     else:
         return True
 
-def cartesian_to_spherical(r):
-    # get cartesian coordinates
-    x = r[0]
-    y = r[1]
-    z = r[2]
-
-    # get spherical coords from cartesian
-    r_mag = np.sqrt(np.sum([x_*x_ for x_ in r]))
-    t = np.arccos(z/r_mag)
-    p = np.arctan2(y,x)
-
-    # return r,theta,phi
-    return r_mag,t,p
+# get spherical coordinates of an atom given an origin
+def atomic_spherical_coord(atom, origin):
+        
+    # get cartesian coords of current atom in the
+    # pdb chosen coord-system
+    curr_r = atom.get_coord() - origin
     
+    # check to make sure the atom we're looking at is not 
+    # located at the origin
+    if np.sum(np.abs(curr_r)) == 0:
+        print('Error: Atom lies at the origin. Coordinates will vause singularity for hologram projections')
+        return None
+    # convert cartesian coords to spherical
+    r_mag,theta,phi = cartesian_to_spherical(curr_r)
+    
+    return r_mag,theta,phi
+
     
 # get atomic coordinates of a residue and return them in format of r,t,p each of which
 # is 4 x N_e where N_e is the number of times that the element e appears in the residue
-def get_atomic_coords(atom_list,origin):
-    r = [[],[],[],[]]
-    t = [[],[],[],[]]
-    p = [[],[],[],[]]
-
-    el_to_ind = protein.el_to_ind
+def get_coords(atom_list,origin,ch_func,ch_num,ch_dict):
     
+    # set up hologram structure
+    r = [[] for i in range(ch_num)]
+    t = [[] for i in range(ch_num)]
+    p = [[] for i in range(ch_num)]
+    ch_to_ind = ch_dict
+    ch_keys = ch_dict.keys()
+
+
     for atom in atom_list:
-        # record the element associated with current atom
-        el = atom.element
-        if el not in ['C','O','N','S']:
+        
+        curr_ch = ch_func(atom)
+
+        if curr_ch not in ch_to_ind.keys():
             continue
-
-        # get cartesian coords of current atom in the
-        # pdb chosen coord-system
-        curr_r = atom.get_coord() - origin
-
-        # check to make sure the atom we're looking at is
-        # not the alpha Carbon
-        if np.sum(np.abs(curr_r)) == 0:
+        ch_ind = ch_to_ind[curr_ch]
+        if curr_ch not in ch_keys:
             continue
-
-        # convert cartesian coords to spherical
-        r_mag,curr_t,curr_p = cartesian_to_spherical(curr_r)
+            
+   
+        r_mag,curr_t,curr_p = atomic_spherical_coord(atom,origin)
 
         # append spherical coords of current atom to
         # the overall lists
-        r[el_to_ind[el]].append(r_mag)
-        t[el_to_ind[el]].append(curr_t)
-        p[el_to_ind[el]].append(curr_p)
+        r[ch_ind].append(r_mag)
+        t[ch_ind].append(curr_t)
+        p[ch_ind].append(curr_p)
 
     return r,t,p
-# get atomic coordinates of a residue and return them in format of r,t,p each of which
-# is 4 x N_e where N_e is the number of times that the element e appears in the residue
-def get_atomic_coords_aa_channeling(atom_list,origin):
-    r = [[]]*20
-    t = [[]]*20
-    p = [[]]*20
 
-    aa_to_ind = protein.aa_to_ind
-    
-    for atom in atom_list:
-        # record the element associated with current atom
-        res = atom.get_parent().resname
-        if res not in aa_to_ind.keys():
-            continue
 
-        # get cartesian coords of current atom in the
-        # pdb chosen coord-system
-        curr_r = atom.get_coord() - origin
+def el_channel(atom):
+    return atom.element
 
-        # check to make sure the atom we're looking at is
-        # not the alpha Carbon
-        if np.sum(np.abs(curr_r)) == 0:
-            continue
 
-        # convert cartesian coords to spherical
-        r_mag,curr_t,curr_p = cartesian_to_spherical(curr_r)
+def aa_channel(atom):
+    return atom.get_parent().resname
 
-        # append spherical coords of current atom to
-        # the overall lists
-        r[aa_to_ind[res]].append(r_mag)
-        t[aa_to_ind[res]].append(curr_t)
-        p[aa_to_ind[res]].append(curr_p)
-
-    return r,t,p
 
 # get atomic coordinates of a residue and return them in format of r,t,p each of which
 # is 4 x N_e where N_e is the number of times that the element e appears in the residue
 def get_res_atomic_coords(res):
-    r = [[],[],[],[]]
-    t = [[],[],[],[]]
-    p = [[],[],[],[]]
 
     ca_coord = res['CA'].get_coord()
-    atom_list = [x for x in res]
+    atom_list = [x for x in res if x.get_name() != 'CA']
+   
+    return get_coords(atom_list,ca_coord,el_channel,EL_CHANNEL_NUM,protein.el_to_ind)
 
-
-    return get_atomic_coords(atom_list,ca_coord)
 
 # returns the spherical coordinates of the atoms of the amino acids that at
-# leastt partially lie within the distance d to the residues alpha Carbon
+# least partially lie within the distance d to the residues alpha Carbon
 def get_res_neighbor_atomic_coords(res,d,struct):
 
     # first find the neighboring atoms
@@ -152,11 +105,12 @@ def get_res_neighbor_atomic_coords(res,d,struct):
     neighbor_atoms = ns.search(ca_coord,d)
 
     # get atomic coords from neighboring atoms
-    return get_atomic_coords(neighbor_atoms,ca_coord)
+    return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.l_to_ind)
+
 
 # returns the spherical coordinates of the atoms of the amino acids that at
-# leastt partially lie within the distance d to the residues alpha Carbon
-def get_res_neighbor_amino_coords(res,d,struct):
+# least partially lie within the distance d to the residues alpha Carbon
+def get_res_neighbor_aa_coords(res,d,struct):
 
     # first find the neighboring atoms
     ca_coord = res['CA'].get_coord()
@@ -166,9 +120,13 @@ def get_res_neighbor_amino_coords(res,d,struct):
     atom_list = pdb.Selection.unfold_entities(model,'A')
     ns = pdb.NeighborSearch(atom_list)
     neighbor_atoms = ns.search(ca_coord,d)
-    neighbor_atoms = [x for x in neighbor_atoms if x.get_name() == 'CA']
+    neighbor_atoms = [x for x in neighbor_atoms if (x.get_name() == 'CA'
+                                                    and x.get_parent() != res)]
+    
+    print(neighbor_atoms)
     # get atomic coords from neighboring atoms
-    return get_atomic_coords_aa_channeling(neighbor_atoms,ca_coord)
+    return get_coords(neighbor_atoms,ca_coord,
+                                    aa_channel,AA_CHANNEL_NUM,protein.aa_to_ind)
 
 
 # returns the hologram coefficients of instances number of samples of each amino acid
@@ -354,25 +312,25 @@ def get_amino_acid_aa_shapes_from_protein_list(protein_list,
         # also get the neighboring atomic coords if the noise distance is greater
         # than zero
 
-        r = [[]]*20
-        t = [[]]*20
-        p = [[]]*20
+        r = [[] for i in range(AA_CHANNEL_NUM)]
+        t = [[] for i in range(AA_CHANNEL_NUM)]
+        p = [[] for i in range(AA_CHANNEL_NUM)]
 
         curr_coords = [r,t,p]
-        print(curr_coords)
+
         if noise_distance > 0:
-            neighbor_coords = get_res_neighbor_amino_coords(sample_res,noise_distance,curr_struct)
+            neighbor_coords = get_res_neighbor_aa_coords(sample_res,noise_distance,curr_struct)
             for i in range(DIMENSIONS):
-                for j in range(CHANNEL_NUM_AA):
+                for j in range(AA_CHANNEL_NUM):
                     curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
 
         curr_r,curr_t,curr_p = curr_coords
-
+XS
         # to be used once coefficients  are gathered for all channels for current res
         curr_coeffs = {}
         # list of the dicts for each channel for current res
         channel_dicts = []
-        for curr_ch in range(CHANNEL_NUM_AA):
+        for curr_ch in range(AA_CHANNEL_NUM):
             curr_channel_coeffs = {}
             for l in range(l_max + 1):
                 # if the current channel has no signal then append zero holographic signal

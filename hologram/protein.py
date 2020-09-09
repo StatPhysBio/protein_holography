@@ -28,3 +28,5 @@ atoms_per_aa = {'CYS': 6, 'ASP': 8, 'SER': 6, 'GLN': 9, 'LYS': 9,
                 'ALA': 5, 'MET': 8, 'HIS': 10, 'ILE': 8, 'LEU': 8,
                 'ARG': 11, 'TRP': 14, 'VAL': 7, 'GLU': 9, 'TYR': 12}
 
+aas = aa_to_ind.keys()
+els = el_to_ind.keys()
