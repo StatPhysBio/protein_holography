@@ -123,7 +123,6 @@ def get_res_neighbor_aa_coords(res,d,struct):
     neighbor_atoms = [x for x in neighbor_atoms if (x.get_name() == 'CA'
                                                     and x.get_parent() != res)]
     
-    print(neighbor_atoms)
     # get atomic coords from neighboring atoms
     return get_coords(neighbor_atoms,ca_coord,
                                     aa_channel,AA_CHANNEL_NUM,protein.aa_to_ind)
@@ -325,7 +324,7 @@ def get_amino_acid_aa_shapes_from_protein_list(protein_list,
                     curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
 
         curr_r,curr_t,curr_p = curr_coords
-XS
+
         # to be used once coefficients  are gathered for all channels for current res
         curr_coeffs = {}
         # list of the dicts for each channel for current res

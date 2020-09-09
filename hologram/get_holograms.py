@@ -4,63 +4,89 @@
 #
 
 # new import statements
-import sys
+import sys, os
 from protein_dir_parse import get_proteins_from_dir
-
-# 
-# old Import statements
-#
-print('Importing modules')
-import os
-print('os imported')
 import pdb_interface as pdb_int
-print('pdb_int imported')
-import tensorflow as tf
-print('tf imported')
-import protein
-print('protein imported')
-#import hnn
-print('hnn imported')
 import hologram
-print('holgram imported')
-import sys
-print('sys imported')
-print('Finished importing modules')
 import numpy as np
+from argparse import ArgumentParser
+import imp
+
+
+print('Finished importing modules')
+
 # constants
 AA_NUM = 20
 
-#
-# parameters for the current analysis
-#
-print('Getting parameters')
-# l value associated with maximum frequency used in fourier transforms
-cutoffL = int(sys.argv[1])
-# frequency to be used to make the holograms
-k = float(sys.argv[2])
-# hologram radius
-rH = 5.
-# noise distance
-d = float(sys.argv[3])
-# directories of proteins and workoing space
-casp7Dir = '/gscratch/stf/mpun/data/casp11'
-workDir = casp7Dir + '/workspace'
-trainDir = casp7Dir + '/training30'
-testDir = casp7Dir + '/val'
+#default_proteindir = os.path.join(os.path.dirname(__file__), "../data/proteins")
+#default_outputdir = os.path.join(os.path.dirname(__file__), "../output/holograms")
+
+#default_proteindir = '../../data/proteins'
+#default_outputdir = '../../output/holograms'
+
+
+# for testing purposes
+default_proteindir = '/gscratch/stf/mpun/data/casp11/training30/'
+default_outputdir = '/gscratch/spe/mpun/protein_holography/data/holograms/'
+
+
+parser = ArgumentParser()
+parser.add_argument('-L',
+                    dest='L',
+                    type=int,
+                    default=1,
+                    help='L value')
+parser.add_argument('-k',
+                    dest='k',
+                    type=float,
+                    default=1.,
+                    help='k value')
+parser.add_argument('-d',
+                    dest='d',
+                    type=float,
+                    default=5.0,
+                    help='d value')
+parser.add_argument('--rH',
+                    dest='rH',
+                    type=float,
+                    default=5.0,
+                    help='hologram radius value')
+parser.add_argument('--proteindir',
+                    dest='proteindir',
+                    type=str,
+                    default=default_proteindir,
+                    help='data directory')
+parser.add_argument('--outputdir',
+                    dest='outputdir',
+                    type=str,
+                    default=default_outputdir,
+                    help='data directory')
+parser.add_argument('-e',
+                    dest='e',
+                    type=int,
+                    default=2,
+                    help='examples per aminoacid')
+parser.add_argument('--ch',
+                    dest='ch',
+                    type=str,
+                    default='aa',
+                    help='channel type')
+
+args =  parser.parse_args()
+
+
+param_tag = "ch={}_e={}_k={}_rH={}_d={}_l={}".format(args.ch, args.e, args.k,
+                                                     args.rH, args.d, args.L)
 
 
 
-
 #
-# get train and test proteins
+# get proteins
 #
-print('Getting training proteins from ' + trainDir)
-trainProteins = get_proteins_from_dir(trainDir)
+print('Getting proteins from ' + args.proteindir)
+trainProteins = get_proteins_from_dir(args.proteindir)
 np.random.shuffle(trainProteins)
 print(str(len(trainProteins)) + ' training proteins gathered')
-#print('Gathering testing proteins from ' + testDir)
-#testProteins = pdb_int.get_proteins_from_dir(testDir)
-#print(str(len(testProteins)) + ' testing proteins gathered')
 
 
 
@@ -68,15 +94,15 @@ print(str(len(trainProteins)) + ' training proteins gathered')
 #
 # get amino acid structures from all training proteins
 #
-trainExamplesPerAa = 4
-print('Getting ' + str(trainExamplesPerAa) + ' training holograms per amino ' +
-      'acid from training proteins')
-train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,trainDir,trainExamplesPerAa,d,rH,k,cutoffL)
 
-hologram_dir = '/gscratch/spe/mpun/holograms/'
-hologram.save(train_hgrams_real,'aa_hgram_noCenter_real_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
-hologram.save(train_hgrams_imag,'aa_hgram_noCenter_imag_example_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
-hologram.save(train_labels,'aa_labels_noCenter_examplesPerAA=' + str(trainExamplesPerAa) + '_k='+str(k)+'_d='+str(d)+'_l='+ str(cutoffL),hologram_dir)
+print('Getting ' + str(args.e) + ' training holograms per amino ' +
+      'acid from training proteins')
+train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
+
+print('Saving ' + param_tag + ' to ' + args.outputdir)
+hologram.save(train_hgrams_real, 'hgram_real_' + param_tag, args.outputdir)
+hologram.save(train_hgrams_imag, 'hgram_imag_' + param_tag, args.outputdir)
+hologram.save(train_labels,'labels_' + param_tag, args.outputdir)
 
 
 print('Terminating successfully')
