@@ -1,8 +1,8 @@
-group: spe
+group: stf
 nodes: 1
 cores: 4
 walltime: '4:00:00'
-mem: 20G
+mem: 10G
 jobname: 'hgram_gather_ch={ch}_e={e}_l={l}_k={k}_d={d}_rH={rH}_{date}'
 outputdir: ./output
 datadir: /gscratch/stf/mpun/data/casp11/training30
@@ -12,15 +12,15 @@ parameters:
   # frequencies to be used to make the holograms
   k: [10.,1.,0.1,0.01, 0.001, 0.0001]
   # maximum frequencies used in fourier transforms
-  l: [6]
+  l: [6,10,12]
   # noise distances
   d: [10.0]
   # hologram recording surface radius
-  rH: [12.0]
+  rH: [5.0,7.0,12.0]
   # channel
-  ch: [aa]
+  ch: [elnc]
   # examples per amino acid
-  e: [2]
+  e: [1024,128]
 
 command: |
   python -u hologram/get_holograms.py -L {l} -k {k} -d {d} --rH {rH} --ch {ch} -e {e} --proteindir {datadir} --outputdir {outputdir} --hgramdir {hgramdir}

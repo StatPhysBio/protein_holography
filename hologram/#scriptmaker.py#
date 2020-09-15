@@ -51,7 +51,6 @@ python -u get_holograms.py -L ' + str(l) +
                     ' -k ' + str(k) + 
                     ' -d ' + str(d) + 
                     ' -rH ' + str(rH) + 
-
                     ' -e ' + str(e) + 
                     ' --proteindir /gscratch/stf/mpun/data/casp11/training30' + 
                     ' --ch aa \n')

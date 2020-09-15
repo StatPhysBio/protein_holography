@@ -3,12 +3,12 @@ import tensorflow as tf
 import numpy as np
 import scipy
 
-def get_dataset(hologram_dir, examples_per_aa, k, d, l_max):
-    p = lambda part: "{}//train_{}_examplesPerAA={}_k={}_d={}_l={}.npy".format(
-        hologram_dir, part, examples_per_aa, k, d, l_max)
+def get_dataset(hologram_dir, ch, examples_per_aa, l_max, k, d, rH):
+    p = lambda part: "{}/{}_ch={}_e={}_l={}_k={}_d={}_rH={}.npy".format(
+        hologram_dir, part, ch, examples_per_aa, l_max, k, d, rH)
 
-    hgrams_real = np.load(p('hgram_real_example'), allow_pickle=True,encoding='latin1')[()]
-    hgrams_imag = np.load(p('hgram_imag_example'), allow_pickle=True,encoding='latin1')[()]
+    hgrams_real = np.load(p('hgram_real'), allow_pickle=True,encoding='latin1')[()]
+    hgrams_imag = np.load(p('hgram_imag'), allow_pickle=True,encoding='latin1')[()]
     hgrams = {}
     for l in range(l_max + 1):
         hgrams[l] = (hgrams_real[l] + 1j * hgrams_imag[l]).astype("complex64")

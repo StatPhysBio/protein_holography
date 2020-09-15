@@ -1,3 +1,4 @@
+
 #
 # Main file of program intended to run analysis on protein structural data using
 # holographic machine learning techniques
@@ -5,29 +6,30 @@
 
 # new import statements
 import sys, os
-from protein_dir_parse import get_proteins_from_dir
+
 import pdb_interface as pdb_int
 import hologram
 import numpy as np
 from argparse import ArgumentParser
-
+import imp
+import protein_dir_parse as pdp
+imp.reload(pdp)
+imp.reload(pdb_int)
 
 
 print('Finished importing modules')
 
-# constants
-AA_NUM = 20
 
-default_proteindir = os.path.join(os.path.dirname(__file__), "../data/proteins")
-default_outputdir = os.path.join(os.path.dirname(__file__), "../output")
-default_hgramdir = os.path.join(os.path.dirname(__file__), "../data/holograms")
+#default_proteindir = os.path.join(os.path.dirname(__file__), "../data/proteins")
+#default_outputdir = os.path.join(os.path.dirname(__file__), "../output")
+#default_hgramdir = os.path.join(os.path.dirname(__file__), "../data/holograms")
 
 
 
 # for testing purposes
-#default_proteindir = '/gscratch/stf/mpun/data/casp11/training30/'
-#default_outputdir = '/gscratch/spe/mpun/protein_holography/data/holograms/'
-
+default_proteindir = '/gscratch/stf/mpun/data/casp11/training30'
+default_outputdir = '/gscratch/spe/mpun/protein_holography/data/holograms'
+default_hgramdir = "/gscratch/spe/mpun/protein_holography/data/holograms"
 
 parser = ArgumentParser()
 parser.add_argument('-L',
@@ -68,18 +70,20 @@ parser.add_argument('--hgramdir',
 parser.add_argument('-e',
                     dest='e',
                     type=int,
-                    default=2,
+                    default=2
+
+,
                     help='examples per aminoacid')
 parser.add_argument('--ch',
                     dest='ch',
                     type=str,
-                    default='aa',
+                    default='elnc',
                     help='channel type')
 
 args =  parser.parse_args()
 
 
-param_tag = "ch={}_e={}_l={}_k={}_d={}__rH={}".format(args.ch, args.e,
+param_tag = "ch={}_e={}_l={}_k={}_d={}_rH={}".format(args.ch, args.e,
                                                       args.L, args.k,
                                                       args.d, args.rH)
 
@@ -89,7 +93,7 @@ param_tag = "ch={}_e={}_l={}_k={}_d={}__rH={}".format(args.ch, args.e,
 # get proteins
 #
 print('Getting proteins from ' + args.proteindir)
-trainProteins = get_proteins_from_dir(args.proteindir)
+trainProteins = pdp.get_proteins_from_dir(args.proteindir)
 np.random.shuffle(trainProteins)
 print(str(len(trainProteins)) + ' training proteins gathered')
 
@@ -102,7 +106,14 @@ print(str(len(trainProteins)) + ' training proteins gathered')
 
 print('Getting ' + str(args.e) + ' training holograms per amino ' +
       'acid from training proteins')
-train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
+if args.ch == 'aa':
+    train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
+if args.ch == 'aaCOA':
+    train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list_COA(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
+if args.ch == 'el':
+    train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_el_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L,True)
+if args.ch == 'elnc':
+    train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_el_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L,False)
 
 print('Saving ' + param_tag + ' to ' + args.outputdir)
 
@@ -115,4 +126,3 @@ hologram.save(train_labels,'labels_' + param_tag, args.hgramdir)
 
 print('Terminating successfully')
     
-

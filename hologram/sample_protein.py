@@ -6,9 +6,9 @@ import Bio.PDB as pdb
 import numpy as np
 
 # function to sample a random residue of a given amino acid type from a protein structure
-def sample_amino_acid_from_protein(protein,aa):
-    parser = pdb.PDBParser(QUIET=True)
-    struct = parser.get_structure(protein + 'struct', protein + '.pdb')
+def sample_amino_acid_from_protein(struct,protein,aa):
+#    parser = pdb.PDBParser(QUIET=True)
+#    struct = parser.get_structure(protein + 'struct', protein + '.pdb')
     residues = [x for x in pdb.Selection.unfold_entities(struct,'R') if (x.resname == aa and 'CA' in x)]
 
     # if the given amino acid is not found print an error and return None
