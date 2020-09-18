@@ -42,6 +42,12 @@ parser.add_argument('-k',
                     type=float,
                     default=1.,
                     help='k value')
+parser.add_argument('--ks',
+                    dest='ks',
+                    nargs='+',
+                    type=float,
+                    default=1.,
+                    help='multiple k values')
 parser.add_argument('-d',
                     dest='d',
                     type=float,
@@ -106,6 +112,11 @@ print(str(len(trainProteins)) + ' training proteins gathered')
 
 print('Getting ' + str(args.e) + ' training holograms per amino ' +
       'acid from training proteins')
+if args.k == -1:
+    param_tag = "ch={}_e={}_l={}_k={}_d={}_rH={}".format(args.ch, args.e,
+                                                      args.L, args.ks,
+                                                      args.d, args.rH)
+    train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_el_shapes_from_protein_list_ks(trainProteins,args.proteindir,args.e,args.d,args.rH,args.ks,args.L,False)
 if args.ch == 'aa':
     train_hgrams_real,train_hgrams_imag,train_labels = pdb_int.get_amino_acid_aa_shapes_from_protein_list(trainProteins,args.proteindir,args.e,args.d,args.rH,args.k,args.L)
 if args.ch == 'aaCOA':

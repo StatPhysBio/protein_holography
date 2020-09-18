@@ -334,6 +334,128 @@ def get_amino_acid_el_shapes_from_protein_list(protein_list,
     return hologram_coeffs_real,hologram_coeffs_imag,hologram_labels
                                                               
         
+
+# returns the hologram coefficients of instances number of samples of each amino acid
+# randomly sampled from the protein list provided
+#
+# note about structure of this function: we want the data organized in l x N x n_c x m
+# In order to do this, we create a dictionary each time we take a sample. Simultaneously
+# we create a list of these dictionaries so that our data is in the order N x l x n_c x m
+# in order to reverse the first two indices, we stack the entries of each dictionary into
+# one np array of length N and index this under teh appropriate l in our ultimate data
+# structure
+def get_amino_acid_el_shapes_from_protein_list_ks(protein_list,
+                                               protein_dir,
+                                               instances,
+                                               noise_distance,
+                                               r_h,
+                                               ks,
+                                               l_max,
+                                               center):
+
+
+    
+    # list of amino acids
+    amino_acids = list(protein.aa_to_ind.keys())
+    # a list of the amino acids we need to take samples of
+    aa_to_sample = amino_acids*instances
+
+    num_proteins = len(protein_list)
+       
+    # indices to keep track of location in the amino acids to sample list
+    # as well as the protein list
+    protein_ind = 0
+    aa_ind = 0
+
+    hologram_coeffs = {}
+    hologram_labels = []
+
+    parser = pdb.PDBParser(QUIET=True)
+
+    data_dicts = []
+    
+    while aa_ind < len(aa_to_sample):
+        if(aa_ind%20 == 0):
+            print(aa_ind)
+        # cool to keep track of whether or not the current amino acid was found
+        aa_found = False
+
+        # get the current aa and the current protein to check for this aa
+        curr_aa = aa_to_sample[aa_ind]
+        curr_protein = protein_list[protein_ind%num_proteins]
+        curr_struct = parser.get_structure(curr_protein + 'struct',protein_dir + '/' + curr_protein + '.pdb')
+        protein_ind += 1
+
+        # take sample residue from protein. If the given aa doesn't exist in this protein
+        # then note the aa is not found and move on to the next protein
+        sample_res = sample_protein.sample_amino_acid_from_protein(curr_struct,curr_protein,curr_aa)
+        if sample_res == None:
+            continue
+        aa_found = True
+
+        # get the atomic coords of the residue in spherical form
+        # also get the neighboring atomic coords if the noise distance is greater
+        # than zero
+        if center:
+            curr_coords = get_res_atomic_coords(sample_res)
+        else:
+            curr_coords = [[[] for i in range(EL_CHANNEL_NUM)] for j in range(DIMENSIONS)]
+        if noise_distance > 0:
+            neighbor_coords = get_res_neighbor_atomic_coords(sample_res,noise_distance,curr_struct)
+            for i in range(DIMENSIONS):
+                for j in range(EL_CHANNEL_NUM):
+                    curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
+
+        curr_r,curr_t,curr_p = curr_coords
+
+        # to be used once coefficients  are gathered for all channels for current res
+        curr_coeffs = {}
+        # list of the dicts for each channel for current res
+        channel_dicts = []
+        for k in ks:
+            for curr_ch in range(EL_CHANNEL_NUM):
+                curr_channel_coeffs = {}
+                for l in range(l_max + 1):
+                    # if the current channel has no signal then append zero holographic signal
+                    if len(curr_r[curr_ch]) == 0:
+                        curr_channel_coeffs[l] = np.array([0.]*(2*l+1))
+                        continue
+                    curr_channel_coeffs[l] = hgm.hologram_coeff_l(curr_r[curr_ch],
+                                                                  curr_t[curr_ch],
+                                                                  curr_p[curr_ch],
+                                                                  r_h, k, l)
+                channel_dicts.append(curr_channel_coeffs)
+        # coefficients gathered for every channel for this sample residue
+        # channels_dicts currently has the structure n_c x l x m
+        # we can now swap n_c and l
+        for l in range(l_max + 1):
+            curr_coeffs[l] = np.stack([x[l] for x in channel_dicts])
+        # now we want to add this dictionary to a list of all the dicts for
+        # each sample aa
+        data_dicts.append(curr_coeffs)
+
+        # make a label for the current hologram
+        curr_label = [0]*len(amino_acids)
+        curr_label[protein.aa_to_ind[curr_aa]] = 1
+
+        # if aa has been found increment the aa_ind
+        if aa_found ==True:
+            hologram_labels.append(curr_label)
+            aa_ind += 1
+
+    # after the above while loop has finished we now assume that all amino acids have
+    # been sampled and their data is compiled in the list data_dicts in the order
+    # N x l x n_c x m. We want to swap the indices N and l so we'll do that here
+    for l in range(l_max + 1):
+        hologram_coeffs[l] = np.stack([x[l] for x in data_dicts])
+
+    hologram_coeffs_real = {}
+    hologram_coeffs_imag = {}
+    for l in range(l_max + 1):
+        hologram_coeffs_real[l] = np.real(hologram_coeffs[l])
+        hologram_coeffs_imag[l] = np.imag(hologram_coeffs[l])
+    print(hologram_coeffs_real[0].shape)
+    return hologram_coeffs_real,hologram_coeffs_imag,hologram_labels
     
     
     
