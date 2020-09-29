@@ -5,6 +5,27 @@
 # This file establishes the clebsch gordan coefficients, sets up an hnn with given parameters,
 # loads holograms from .npy files, and then tests the network via a function call.
 #
+aa_to_ind = {'CYS': 2, 'ILE': 8, 'GLN': 12, 'VAL': 6, 'LYS': 13,
+             'PRO': 4, 'GLY': 0, 'THR': 5, 'PHE': 16, 'GLU': 14,
+             'HIS': 15, 'MET': 11, 'ASP': 7, 'LEU': 9, 'ARG': 17,
+             'TRP': 19, 'ALA': 1, 'ASN': 10, 'TYR': 18, 'SER': 3}
+ind_to_aa = {0: 'GLY', 1: 'ALA', 2: 'CYS', 3: 'SER', 4: 'PRO',
+             5: 'THR', 6: 'VAL', 7: 'ASP', 8: 'ILE', 9: 'LEU',
+             10: 'ASN', 11: 'MET', 12: 'GLN', 13: 'LYS', 14: 'GLU',
+             15: 'HIS', 16: 'PHE', 17: 'ARG', 18: 'TYR', 19: 'TRP'}
+
+# dictionaries to convert element to index
+el_to_ind = {'C':0 , 'N':1, 'O':2, 'S':3}
+
+# dictionaries for amino acid statistics
+atoms_per_aa = {'CYS': 6, 'ASP': 8, 'SER': 6, 'GLN': 9, 'LYS': 9,
+                'ASN': 8, 'PRO': 7, 'GLY': 4, 'THR': 7, 'PHE': 11,
+                'ALA': 5, 'MET': 8, 'HIS': 10, 'ILE': 8, 'LEU': 8,
+                'ARG': 11, 'TRP': 14, 'VAL': 7, 'GLU': 9, 'TYR': 12}
+
+aas = aa_to_ind.keys()
+els = el_to_ind.keys()
+
 
 import tensorflow as tf
 import numpy as np
@@ -12,9 +33,12 @@ import hnn
 import os
 import clebsch
 from dataset import get_dataset
+from dataset import get_hgrams_labels
 import sys, os
 import logging
 from argparse import ArgumentParser
+import matplotlib as mpl
+from matplotlib import pyplot as plt
 
 logging.getLogger().setLevel(logging.INFO)
 #default_datadir = os.path.join(os.path.dirname(__file__), "../data/")
@@ -50,22 +74,22 @@ parser.add_argument('-d',
 parser.add_argument('--rH',
                     dest='rH',
                     type=float,
-                    default=12.0,
+                    default=5.0,
                     help='rH value')
 parser.add_argument('--ch',
                     dest='ch',
                     type=str,
-                    default='aaCOA',
+                    default='elnc',
                     help='ch value')
 parser.add_argument('-e',
                     dest='e',
                     type=int,
-                    default=16,
+                    default=1024,
                     help='examples per aminoacid')
 parser.add_argument('--e_val',
                     dest='e_val',
                     type=int,
-                    default=2,
+                    default=128,
                     help='examples per aminoacid validation')
 parser.add_argument('--datadir',
                     dest='datadir',
@@ -120,6 +144,7 @@ checkpoint_filepath = os.path.join(
                                                               args.L, args.k,
                                                               args.d, args.rH,
                                                               args.nlayers,args.hdim))
+
 if args.k == -1:
     print('here')
     checkpoint_filepath = os.path.join(
@@ -148,42 +173,57 @@ def loss_fn(truth, pred):
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate)
 
+
 network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy'])
 
-ds_train = get_dataset(hologram_dir, args.ch, args.e, args.L, args.ks, args.d, args.rH)
-ds_val = get_dataset(hologram_dir, args.ch, args.e_val, args.L, args.ks, args.d, args.rH)
+test_hgrams,test_labels = get_hgrams_labels(hologram_dir, args.ch, args.e_val, args.L, args.ks, args.d, args.rH)
 
-# training dataset shouldn't be truncated unless testing
-ds_train_trunc = ds_train.batch(args.bsize) #.take(50)
-ds_val_trunc = ds_val.batch(2)
+print(test_hgrams)
 
-network.evaluate(ds_train.batch(1).take(1))
-network.summary()
+logging.info('Testing network')
 
-logging.info('Training network')
 
-model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-    filepath=checkpoint_filepath,
-    save_weights_only=True,
-    monitor='loss',
-    mode='min',
-    save_best_only=True)
+network.load_weights(checkpoint_filepath)
+total = len(test_hgrams[0])
+print('Total number of examples = ' + str(total))
+prediction = network.predict(test_hgrams,batch_size=len(test_hgrams[0]))
+print('predicted')
+print(prediction)
+c_mat = np.zeros([20,20])
 
-early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor='loss', patience=20, mode='min', min_delta=0.0001)
+print(prediction[0])
+print(np.argmax(prediction[0]))
+print(test_labels[0])
+correct = 0.
+for i in range(total):
+    y_true = np.argmax(test_labels[i])
+    y_pred = np.argmax(prediction[i])
+    if y_true == y_pred:
+        correct += 1.
+    c_mat[y_true][y_pred] += 1.
+print('Accuracy: ' + str(correct/total))
 
-try:
-    try:
-        print('not loading')
-        #network.load_weights(checkpoint_filepath)
-    except:
-        logging.error("Unable to load weights.")
-    network.fit(ds_train_trunc, epochs=50, shuffle=True,
-                validation_data=ds_val_trunc, 
-                verbose = args.verbosity,
-                callbacks=[model_checkpoint_callback, early_stopping])
-except KeyboardInterrupt:
-    logging.warning("KeyboardInterrupt received. Exiting.")
-    sys.exit(os.EX_SOFTWARE)
+
+test_tag = "ch={}_e={}_e_val={}_l={}_k={}_d={}_rH={}_nlayers={}_hdim={}".format(args.ch,
+                                                              args.e, args.e_val,
+                                                              args.L, args.k,
+                                                              args.d, args.rH,
+                                                              args.nlayers,args.hdim)
+
+c_mat = c_mat/total*20.
+np.save('/usr/lusers/mpun/plots/c_mat_val_' + test_tag, c_mat,allow_pickle=True)
+size = 20
+from matplotlib.pyplot import figure
+figure(num=None, figsize=(8, 6), dpi=1000, facecolor='w', edgecolor='k')
+plt.imshow(np.power(c_mat,0.5), cmap='hot', interpolation='nearest',vmin=0.,vmax=1.)
+plt.xticks(range(size),[ind_to_aa[i] for i in range(size)],rotation=90,fontsize=10)
+plt.yticks(range(size),[ind_to_aa[i] for i in range(size)],fontsize=10)
+plt.xlabel('Predicted amino acid',fontsize=12)
+plt.ylabel('Input amino acid',fontsize=12)
+plt.title('Square root training prediction matrix',fontsize=15)
+cbar = plt.colorbar()
+cbar.ax.set_ylabel(r'$\sqrt{accuracy}$', rotation=270,fontsize=12,labelpad=20)
+plt.savefig('/usr/lusers/mpun/plots/val_' + test_tag + '.svg',dpi=1000, format='svg')
 
 logging.info('Terminating successfully')
+

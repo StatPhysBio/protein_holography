@@ -39,6 +39,7 @@ class Linearity(tf.keras.layers.Layer):
                                               initializer=weights_initializer,
                                               trainable=True,
                                               name="W_real_" + str(self.layer_id) + "_" + str(l))
+#                                              regularizer=tf.keras.regularizers.l1(0.00001),
 
             weights_imag[l] = self.add_weight(shape=[input_dims[l],
                                                      output_dims[l]],

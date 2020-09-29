@@ -12,7 +12,8 @@ import nonlinearity
 
 class hnn(tf.keras.Model):
     
-    def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, **kwargs):
+    def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, num_dense_layers
+                 , **kwargs):
 
         # call to the super function tf.keras.Model
         super().__init__(**kwargs)
@@ -30,18 +31,22 @@ class hnn(tf.keras.Model):
         self.cg_matrices = cg_matrices
         # number of classes possible in classification task
         self.num_classes = num_classes
-        
+        # number of dense layers
+        self.num_dense_layers = num_dense_layers
+
         # create the layers
         temp_layers = []
         for i in range(num_layers):
             temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
-        temp_layers.append(
-            tf.keras.layers.Dense(
-                num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
-                bias_initializer=tf.keras.initializers.GlorotUniform()
+        for i in range(num_dense_layers):
+            temp_layers.append(
+                tf.keras.layers.Dense(
+                    num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
+                    bias_initializer=tf.keras.initializers.GlorotUniform(),
+                    kernel_regularizer=tf.keras.regularizers.l1(0.00001),                    
+                )
             )
-        )
 
         # assignment of layers to a class feature
         self.layers_ = temp_layers
@@ -74,7 +79,8 @@ class hnn(tf.keras.Model):
                         )
 
         # feed scalar output into dense layer
-        output = self.layers_[-1](scalar_output)
-        return output
+        for i in range(self.num_dense_layers):
+            scalar_output = self.layers_[-self.num_dense_layers+i](scalar_output)
+        return scalar_output
             
         
