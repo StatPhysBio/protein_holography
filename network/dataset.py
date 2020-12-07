@@ -3,9 +3,13 @@ import tensorflow as tf
 import numpy as np
 import scipy
 
-def get_dataset(hologram_dir, ch, examples_per_aa, l_max, k, d, rH):
+def get_dataset(hologram_dir, ch, examples_per_aa, l_max, k, d, rH, aas):
     p = lambda part: "{}/{}_ch={}_e={}_l={}_k={}_d={}_rH={}.npy".format(
         hologram_dir, part, ch, examples_per_aa, l_max, k, d, rH)
+    if len(aas) > 0:
+        p = lambda part: "{}/{}_ch={}_e={}_l={}_k={}_d={}_rH={}_aas={}.npy".format(
+            hologram_dir, part, ch, examples_per_aa, l_max, k, d, rH, aas)
+
 
     hgrams_real = np.load(p('hgram_real'), allow_pickle=True,encoding='latin1')[()]
     hgrams_imag = np.load(p('hgram_imag'), allow_pickle=True,encoding='latin1')[()]

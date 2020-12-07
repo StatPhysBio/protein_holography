@@ -1,4 +1,3 @@
-
 #
 # File to train networks built from the hnn.py class. 
 #
@@ -26,21 +25,26 @@ default_outputdir = '/gscratch/spe/mpun/protein_holography/output'
 
 
 parser = ArgumentParser()
+parser.add_argument('--file_L',
+                    dest='file_L',
+                    type=int,
+                    default=6,
+                    help='L value for file specification')
 parser.add_argument('-L',
                     dest='L',
                     type=int,
                     default=6,
-                    help='L value')
+                    help='L value for practical cutoff (L <= file_L')
 parser.add_argument('-k',
                     dest='k',
-                    type=float,
+                    type=complex,
                     default=1.,
                     help='k value')
 parser.add_argument('--ks',
                     dest='ks',
                     nargs='+',
-                    type=float,
-                    default=1.,
+                    type=complex,
+                    default=[],
                     help='multiple k values')
 parser.add_argument('-d',
                     dest='d',
@@ -50,22 +54,22 @@ parser.add_argument('-d',
 parser.add_argument('--rH',
                     dest='rH',
                     type=float,
-                    default=12.0,
+                    default=5.0,
                     help='rH value')
 parser.add_argument('--ch',
                     dest='ch',
                     type=str,
-                    default='aaCOA',
+                    default='el',
                     help='ch value')
 parser.add_argument('-e',
                     dest='e',
                     type=int,
-                    default=16,
+                    default=1024,
                     help='examples per aminoacid')
 parser.add_argument('--e_val',
                     dest='e_val',
                     type=int,
-                    default=2,
+                    default=128,
                     help='examples per aminoacid validation')
 parser.add_argument('--datadir',
                     dest='datadir',
@@ -90,7 +94,7 @@ parser.add_argument('--hdim',
 parser.add_argument('--nlayers',
                     dest='nlayers',
                     type=int,
-                    default=4,
+                    default=3,
                     help='num layers')
 parser.add_argument('--bsize',
                     dest='bsize',
@@ -102,10 +106,15 @@ parser.add_argument('--learnrate',
                     type=float,
                     default=0.001,
                     help='learning rate')
-
+parser.add_argument('--aas',
+                    dest='aas',
+                    type=str,
+                    nargs='+',
+                    default=[],
+                    help='aas for fewer class classifier')
 
 args =  parser.parse_args()
-
+print(args.ks)
 logging.info("GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
 #tf.config.threading.set_intra_op_parallelism_threads(4)
 #tf.config.threading.set_inter_op_parallelism_threads(4)
@@ -129,12 +138,26 @@ if args.k == -1:
                                                                                      args.L, args.ks,
                                                                                      args.d, args.rH,
                                                                                      args.nlayers,args.hdim))
+if len(args.aas) > 0:
+    print('aas')
+    checkpoint_filepath = os.path.join(
+        args.outputdir,
+        "ch={}_e={}_e_val={}_l={}_k={}_d={}_rH={}_nlayers={}_hdim={}_aas={}/weights".format(args.ch,
+                                                                                     args.e, args.e_val,
+                                                                                     args.L, args.k,
+                                                                                     args.d, args.rH,
+                                                                                               args.nlayers,args.hdim,
+                                                                                               args.aas))
+
+
 
 tf_cg_matrices = clebsch.load_clebsch(cg_file, args.L)
 
 # network parameters
 num_layers = args.nlayers
 num_aa = 20
+if len(args.aas) > 0:
+    num_aa = len(args.aas)
 hidden_l_dims = [[args.hdim] * (args.L + 1)] * num_layers
 logging.info("L_MAX=%d, %d layers", args.L, num_layers)
 logging.info("Hidden dimensions: %s", hidden_l_dims)
@@ -150,8 +173,13 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate)
 
 network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy'])
 
-ds_train = get_dataset(hologram_dir, args.ch, args.e, args.L, args.ks, args.d, args.rH)
-ds_val = get_dataset(hologram_dir, args.ch, args.e_val, args.L, args.ks, args.d, args.rH)
+if args.k != -1:
+    ds_train = get_dataset(hologram_dir, args.ch, args.e, args.file_L, args.k, args.d, args.rH, args.aas)
+    ds_val = get_dataset(hologram_dir, args.ch, args.e_val, args.file_L, args.k, args.d, args.rH, args.aas)
+
+if args.k == -1:
+    ds_train = get_dataset(hologram_dir, args.ch, args.e, args.file_L, args.ks, args.d, args.rH, args.aas)
+    ds_val = get_dataset(hologram_dir, args.ch, args.e_val, args.file_L, args.ks, args.d, args.rH, args.aas)
 
 # training dataset shouldn't be truncated unless testing
 ds_train_trunc = ds_train.batch(args.bsize) #.take(50)
@@ -174,14 +202,15 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
 
 try:
     try:
-        print('not loading')
-        #network.load_weights(checkpoint_filepath)
+        #print('not loading')
+        network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
-    network.fit(ds_train_trunc, epochs=50, shuffle=True,
+    history = network.fit(ds_train_trunc, epochs=50, shuffle=True,
                 validation_data=ds_val_trunc, 
                 verbose = args.verbosity,
                 callbacks=[model_checkpoint_callback, early_stopping])
+    print(history.history)
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)

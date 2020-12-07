@@ -39,13 +39,13 @@ parser.add_argument('-L',
                     help='L value')
 parser.add_argument('-k',
                     dest='k',
-                    type=float,
+                    type=complex,
                     default=1.,
                     help='k value')
 parser.add_argument('--ks',
                     dest='ks',
                     nargs='+',
-                    type=float,
+                    type=complex,
                     default=1.,
                     help='multiple k values')
 parser.add_argument('-d',
