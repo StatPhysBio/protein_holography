@@ -5,7 +5,10 @@ Classification Tasks:
         4. noisy problem (identifying center AA in the presence of other residues) both Zernike and Hermite 
         5. tetris noisy problem (identifying center tetris piece in the presence of other pieces)
         6. easy problem (tetris or AA classification based on shape)
-        7. Amino acid encoding (20 channels) instead of atom encoding
+        7. Amino acid encoding instead of atom encoding 
+                7.1 20 channels for all the amino acid types
+                7.2 reduced code: 4 (or more) channels for amino acid properties (chrage, hydrophpbicity, polarity, class).
+                
         8. neural network regression based on presence and absence of AAs in a neighborhood with a bunch of arbitrary orderings (e.g. closest neighbors) -- easy encoding
                 8.1 number of AA within a distance
                 8.2 vector of identities ordered based on their relative distace
