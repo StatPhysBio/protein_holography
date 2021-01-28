@@ -168,10 +168,14 @@ def loss_fn(truth, pred):
     return tf.nn.softmax_cross_entropy_with_logits(
         labels = truth,
         logits = pred)
+@tf.function
+def confidence(truth,pred):
+    return tf.math.reduce_max(tf.nn.softmax(pred))
+
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate)
 
-network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy'])
+network.compile(optimizer=optimizer, loss=loss_fn, metrics =['categorical_accuracy',confidence])
 
 if args.k != -1:
     ds_train = get_dataset(hologram_dir, args.ch, args.e, args.file_L, args.k, args.d, args.rH, args.aas)
@@ -206,11 +210,13 @@ try:
         network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
-    history = network.fit(ds_train_trunc, epochs=50, shuffle=True,
-                validation_data=ds_val_trunc, 
-                verbose = args.verbosity,
-                callbacks=[model_checkpoint_callback, early_stopping])
-    print(history.history)
+    for x in ds_train.batch(1):
+        network.evaluate(x=x[0],y=x[1])
+    #history = network.fit(ds_train_trunc, epochs=5000, shuffle=True,
+#                validation_data=ds_val_trunc, 
+#                verbose = args.verbosity,
+#                callbacks=[model_checkpoint_callback, early_stopping])
+#    print(history.history)
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
