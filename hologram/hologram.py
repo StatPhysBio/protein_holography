@@ -52,6 +52,18 @@ def hologram_coeff_l(r,t,p,r_h,k,l):
     return np.array(fourier_coeff_l)
 
 
+def delta(r,t,p,l):
+    if (np.array(r).shape != np.array(t).shape or
+        np.array(p).shape != np.array(t).shape):
+        print('Error: input arrays do not have same shape')
+        return None
+
+    fourier_coeff_l = []
+    for m in range(-l,l+1):
+        fourier_coeff_l.append(np.sum(sp.special.sph_harm(m,l,p,t),axis=-1))
+    return np.array(fourier_coeff_l)
+
+
 
 # function to load premade holograms
 #
@@ -72,4 +84,42 @@ def load_holograms(k_,d,cutoff_l,examples_per_aa):
 
 def save(holograms,filename,directory):
     np.save(directory+'/'+filename,holograms,allow_pickle=True)
+
+# given a set of points parametrized by r,t,p, this function returns the
+# coefficient of Ylm in the spherical harmonic expansion of the electric
+# field caused by these points at the surface of a sphere of radius r_h
+def zernike_coeff_lm(r,t,p,n,r_max,l,m):
+    if (n-l) % 2 == 1:
+        return 0.+0j
+    # check input dimensions of arrays
+    if (np.array(r).shape != np.array(t).shape or
+        np.array(t).shape != np.array(p).shape):
+        print('Error: input arrays do not have same shape')
+    print('\n n = {}, l = {}'.format(n,l))
+    D = 3.
+    A = np.power(-1,(n-l)/2.) 
+    B = np.sqrt(2.*n + D)
+    C = sp.special.binom(int((n+l+D)/2. - 1), int((n-l)/2.))
+    E = sp.special.hyp2f1(-(n-1)/2.,(n+l+D)/2.,l+D/2.,np.array(r)/r_max*np.array(r)/r_max)
+    F = np.power(np.array(r)/r_max,l)
+    print('r = ' + str(np.array(r)/r_max))
+    print(A,B,C,E)
+    y = np.conj(sp.special.sph_harm(m,l,p,t))
+    print(y)
+    # assemble coefficients
+    coeffs = A * B * C * E * F * y
+    print('result = ' + str(coeffs) + '\n')
+    return np.sum(coeffs,axis=-1)
+    
+def zernike_coeff_l(r,t,p,n,r_max,l):
+    if (np.array(r).shape != np.array(t).shape or
+        np.array(p).shape != np.array(t).shape):
+        print('Error: input arrays do not have same shape')
+        return None
+
+    fourier_coeff_l = []
+    for m in range(0,2*l+1):
+        fourier_coeff_l.append(zernike_coeff_lm(r,t,p,n,r_max,l,m-l))
+    return np.array(fourier_coeff_l)/100.
+
 

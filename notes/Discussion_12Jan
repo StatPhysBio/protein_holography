@@ -1,0 +1,38 @@
+Classification Tasks:
+        1. based on RSA (solvant accessibility)
+        2. secondary structure (if an AA is a part of alpha helix or beta sheet)
+        3. Hard problem (predicting center AA)
+        4. noisy problem (identifying center AA in the presence of other residues) both Zernike and Hermite 
+        5. tetris noisy problem (identifying center tetris piece in the presence of other pieces)
+        6. easy problem (tetris or AA classification based on shape)
+        7. Amino acid encoding instead of atom encoding 
+                7.1 20 channels for all the amino acid types
+                7.2 reduced code: 4 (or more) channels for amino acid properties (chrage, hydrophpbicity, polarity, class).
+                
+        8. neural network regression based on presence and absence of AAs in a neighborhood with a bunch of arbitrary orderings (e.g. closest neighbors) -- easy encoding
+                8.1 number of AA within a distance
+                8.2 vector of identities ordered based on their relative distace
+                8.3 some encoding of pairwise distances and AAs
+                ....
+        9. learn a equvariant network with zernike input in which the weights are not dependent on "n", i.e., w_{nl}= w_l for all n's.  
+        10. R_{nl} w_{nl} Y_{lm})--> Clebsch-Gordon nonlinearity on Y_{lm} on all layers+ Relu nonlinearity on R_{nl} at the first layer 
+        11. nonlinearity on the R function operating in a normal neural net set up. These transformations are done in parallel to the equivariant net.
+        
+debugging issues:
+        1. look at mis-classified AA, are they faulty in some sense? 
+        2. multiple n (Zernike) classification for easy tetris (with and without scaling the input)
+        3. Inverse projection for a specific "n" for a given neighborhood (tetris or AA); what n we need?
+        4. TSNE or UMAP for invariants of Zernike (power) to see how AA's cluster
+        
+       
+Hermites:       
+        4. Inverse projection for Hermite to reconstruct the image (based on all the coefficients)
+        5. Andrew writing some notes
+        6. TSNE on Hermite invariants for different AAs
+        
+
+longer term debugging plan:
+        1. reconstruction based on holograms (inverse problem)
+        
+
+        
