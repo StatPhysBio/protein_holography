@@ -37,7 +37,10 @@ class hnn(tf.keras.Model):
         # create the layers
         temp_layers = []
         for i in range(num_layers):
-            temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
+            if i == 0:
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = 10.))
+            else:
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
         for i in range(num_dense_layers):
             temp_layers.append(
