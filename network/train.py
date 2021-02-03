@@ -56,6 +56,12 @@ parser.add_argument('--rH',
                     default=None,
                     nargs='+',
                     help='rH value')
+parser.add_argument('--rmax',
+                    dest='rmax',
+                    type=float,
+                    default=None,
+                    nargs='+',
+                    help='rmax value')
 parser.add_argument('--ch',
                     dest='ch',
                     type=str,

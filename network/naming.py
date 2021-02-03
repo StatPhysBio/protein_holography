@@ -34,7 +34,8 @@ def get_val_data_id(args):
     ignore_params = ['datadir','outputdir',
                      'verbosity','bsize',
                      'learnrate','hdim',
-                     'nlayers','eVal'] 
+                     'nlayers','eVal',
+                     'scale'] 
     return get_id_from_params(args,ignore_params)
 
 def get_network_id(args):
