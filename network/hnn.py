@@ -12,8 +12,8 @@ import nonlinearity
 
 class hnn(tf.keras.Model):
     
-    def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, num_dense_layers
-                 , **kwargs):
+    def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, num_dense_layers, scale,
+                 **kwargs):
 
         # call to the super function tf.keras.Model
         super().__init__(**kwargs)
@@ -38,7 +38,7 @@ class hnn(tf.keras.Model):
         temp_layers = []
         for i in range(num_layers):
             if i == 0:
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = 10.))
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))
             else:
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))

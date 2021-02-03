@@ -119,6 +119,12 @@ parser.add_argument('--aas',
                     nargs='+',
                     default=None,
                     help='aas for fewer class classifier')
+parser.add_argument('--scale',
+                    dest='scale',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='scale for rescaling inputs')
 
 args =  parser.parse_args()
 
@@ -157,7 +163,7 @@ logging.info("L_MAX=%d, %d layers", args.l[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
     args.l[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, 1)
+    tf_cg_matrices, 1, args.scale[0])
 print(args.l[0], hidden_l_dims, nlayers, n_classes)
 
 @tf.function
