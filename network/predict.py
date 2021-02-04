@@ -1,7 +1,8 @@
 #
 # File to train networks built from the hnn.py class. 
 #
-# This file establishes the clebsch gordan coefficients, sets up an hnn with given parameters,
+gly
+ 2 files changed, 11# This file establishes the clebsch gordan coefficients, sets up an hnn with given parameters,
 # loads holograms from .npy files, and then tests the network via a function call.
 #
 
@@ -221,16 +222,20 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
 try:
     try:
         if args.load:
-            print('not loading')
-        else:
             network.load_weights(checkpoint_filepath)
+        else:
+            print('not loading')
     except:
         logging.error("Unable to load weights.")
     prediction = network.predict(ds_val.batch(1),
                           callbacks=[model_checkpoint_callback,
                                      early_stopping])
-    np.save(args.outputdir + '/predictions_' + network_id,
-            prediction)
+    if args.load:
+        np.save(args.outputdir + '/loaded_predictions_' + network_id,
+                prediction)
+    else:
+        np.save(args.outputdir + '/predictions_' + network_id,
+                prediction)
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
