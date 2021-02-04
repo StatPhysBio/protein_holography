@@ -26,7 +26,8 @@ def get_data_id(args):
                      'verbosity','bsize',
                      'learnrate','hdim',
                      'nlayers','eVal',
-                     'scale','load'] 
+                     'scale','load',
+                     'netL'] 
     return get_id_from_params(args,ignore_params)
 
 def get_val_data_id(args):
@@ -35,7 +36,8 @@ def get_val_data_id(args):
                      'verbosity','bsize',
                      'learnrate','hdim',
                      'nlayers','eVal',
-                     'scale','load'] 
+                     'scale','load',
+                     'netL'] 
     return get_id_from_params(args,ignore_params)
 
 def get_network_id(args):

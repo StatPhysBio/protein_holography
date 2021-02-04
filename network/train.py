@@ -26,12 +26,12 @@ parser.add_argument('--projection',
                     nargs='+',
                     default=None,
                     help='Radial projection used (e.g. hgram, zgram)')
-parser.add_argument('--fileL',
-                    dest='fileL',
+parser.add_argument('--netL',
+                    dest='netL',
                     type=int,
                     nargs='+',
                     default=None,
-                    help='L value for file specification')
+                    help='L value for network')
 parser.add_argument('-l',
                     dest='l',
                     type=int,
@@ -164,13 +164,13 @@ for el in ds_val:
 
 # set up network
 nlayers = args.nlayers[0]
-hidden_l_dims = [[args.hdim[0]] * (args.l[0] + 1)] * nlayers
-logging.info("L_MAX=%d, %d layers", args.l[0], nlayers)
+hidden_l_dims = [[args.hdim[0]] * (args.netL[0] + 1)] * nlayers
+logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
-    args.l[0], hidden_l_dims, nlayers, n_classes,
+    args.netL[0], hidden_l_dims, nlayers, n_classes,
     tf_cg_matrices, 1, args.scale[0])
-print(args.l[0], hidden_l_dims, nlayers, n_classes)
+
 
 @tf.function
 def loss_fn(truth, pred):
