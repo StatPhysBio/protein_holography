@@ -131,6 +131,11 @@ parser.add_argument('--scale',
                     nargs='+',
                     default=None,
                     help='scale for rescaling inputs')
+parser.add_argument('--load',
+                    dest='load',
+                    type=bool,
+                    default=False,
+                    help='choose to load weights')
 
 args =  parser.parse_args()
 
@@ -215,8 +220,10 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
 
 try:
     try:
-        #print('not loading')
-        network.load_weights(checkpoint_filepath)
+        if args.load:
+            print('not loading')
+        else:
+            network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
     prediction = network.predict(ds_val.batch(1),
