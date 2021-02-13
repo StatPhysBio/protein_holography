@@ -196,7 +196,7 @@ network.compile(optimizer=optimizer,
 
 # training dataset shouldn't be truncated unless testing
 ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
-ds_val_trunc = ds_val.batch(2)
+ds_val_trunc = ds_val.batch(128)
 
 network.evaluate(ds_train.batch(1).take(1))
 network.summary()
@@ -215,7 +215,7 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
 
 try:
     try:
-        #print('not loading')
+#        print('not loading')
         network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")

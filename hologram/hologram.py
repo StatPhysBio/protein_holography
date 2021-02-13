@@ -2,7 +2,6 @@
 # hologram.py -- Michael Pun -- 28 January 2021
 #
 # This module contains the functions used to project point clouds 
-# characterized by arrays of spherical coordinates into spherical
 # coefficients. The functions also allow for a channel dimensions
 # to encode any information that is not spatial in the data.
 #

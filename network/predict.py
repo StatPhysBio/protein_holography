@@ -1,8 +1,7 @@
 #
 # File to train networks built from the hnn.py class. 
 #
-gly
- 2 files changed, 11# This file establishes the clebsch gordan coefficients, sets up an hnn with given parameters,
+# This file establishes the clebsch gordan coefficients, sets up an hnn with given parameters,
 # loads holograms from .npy files, and then tests the network via a function call.
 #
 
@@ -27,8 +26,8 @@ parser.add_argument('--projection',
                     nargs='+',
                     default=None,
                     help='Radial projection used (e.g. hgram, zgram)')
-parser.add_argument('--fileL',
-                    dest='fileL',
+parser.add_argument('--netL',
+                    dest='netL',
                     type=int,
                     nargs='+',
                     default=None,
@@ -177,7 +176,8 @@ network = hnn.hnn(
     args.l[0], hidden_l_dims, nlayers, n_classes,
     tf_cg_matrices, 1, args.scale[0])
 print(args.l[0], hidden_l_dims, nlayers, n_classes)
-
+print([layer for layer in network.layers_])
+print([layer for layer in network.layers])
 @tf.function
 def loss_fn(truth, pred):
     return tf.nn.softmax_cross_entropy_with_logits(

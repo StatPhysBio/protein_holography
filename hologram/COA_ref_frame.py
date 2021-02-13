@@ -38,4 +38,4 @@ def get_COA_axes(res):
     
     z_hat = np.einsum('ijk,j,k->i',get_eijk(),x_hat,y_hat)
 
-    return (x_hat,y_hat,z_hat)
+    return np.array([x_hat,y_hat,z_hat])
