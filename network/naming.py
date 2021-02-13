@@ -5,6 +5,7 @@
 #  - training logs from equivariant neural networks
 #  - equivariant neural network weights
 #
+import copy
 
 def get_id_from_params(args,ignore_params):
     params = {}
@@ -31,14 +32,15 @@ def get_data_id(args):
     return get_id_from_params(args,ignore_params)
 
 def get_val_data_id(args):
-    args.e = args.eVal
+    val_args = copy.deepcopy(args)
+    val_args.e = args.eVal
     ignore_params = ['datadir','outputdir',
                      'verbosity','bsize',
                      'learnrate','hdim',
                      'nlayers','eVal',
                      'scale','load',
                      'netL'] 
-    return get_id_from_params(args,ignore_params)
+    return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
     ignore_params = ['datadir','outputdir','verbosity','learnrate','bsize','load']
