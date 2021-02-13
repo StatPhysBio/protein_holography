@@ -9,7 +9,7 @@ def get_dataset(data_dir, data_id):
     hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
                      allow_pickle=True,
                      encoding='latin1')[()]
-                                                                                                                                                                                                                                                                                                                                                                                                                     
+    print('/'.join([data_dir,data_id + '.npy']))
 #     # assemble complex holograms from real and imaginary parts
 #     hgrams = {}
 #     for l in range(l_max + 1):

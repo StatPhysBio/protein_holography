@@ -15,6 +15,7 @@ import sys, os
 import logging
 from argparse import ArgumentParser
 import naming
+import hnn_intermediate as hnn_inter
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -143,7 +144,7 @@ args =  parser.parse_args()
 train_data_id = naming.get_data_id(args)
 val_data_id = naming.get_val_data_id(args)
 network_id = naming.get_network_id(args)
-
+print(network_id)
 logging.info("GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
 #tf.config.threading.set_intra_op_parallelism_threads(4)
 #tf.config.threading.set_inter_op_parallelism_threads(4)
@@ -175,6 +176,10 @@ logging.info("Hidden dimensions: %s", hidden_l_dims)
 network = hnn.hnn(
     args.netL[0], hidden_l_dims, nlayers, n_classes,
     tf_cg_matrices, 1, args.scale[0])
+intermediate_layer = 1
+intermediate_network = hnn_inter.hnn_intermediate(
+    args.netL[0], hidden_l_dims, nlayers, n_classes,
+    tf_cg_matrices, 1, args.scale[0],intermediate_layer)
 
 @tf.function
 def loss_fn(truth, pred):
@@ -191,19 +196,28 @@ network.compile(optimizer=optimizer,
                 loss=loss_fn,
                 metrics =['categorical_accuracy',confidence])
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
+@tf.function
+def inter_loss_fn(truth, pred):
+    return 1.
 
-network.compile(optimizer=optimizer,
-                loss=loss_fn,
-                metrics =['categorical_accuracy',confidence])
+
+intermediate_network.compile(optimizer=optimizer,
+                loss=inter_loss_fn)
 
 
 # training dataset shouldn't be truncated unless testing
 ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 ds_val_trunc = ds_val.batch(2)
-
+intermediate_network.evaluate(ds_train.batch(1).take(1))
 network.evaluate(ds_train.batch(1).take(1))
 network.summary()
+
+# attempt to get intermediate layers from the network
+# for x in network.layers[:-1]:
+#     print(x)
+#     print(x.__dict__.keys())
+#     print('Output = ' + str(x.output_))
+#     print('\n\n\n')
 
 #print(network.model())
 logging.info('Getting prediction from network')
@@ -222,19 +236,29 @@ try:
     try:
         if args.load:
             network.load_weights(checkpoint_filepath)
+            intermediate_network.load_weights(checkpoint_filepath)
         else:
             print('not loading')
     except:
         logging.error("Unable to load weights.")
+    network.save_weights('temp_weights')
+    intermediate_network.load_weights('temp_weights')
     prediction = network.predict(ds_val.batch(1),
                           callbacks=[model_checkpoint_callback,
                                      early_stopping])
+    intermediate_out = intermediate_network.predict(ds_val.batch(1))
+    print(prediction[0])
+#    print(intermediate_out)
     if args.load:
         np.save(args.outputdir + '/loaded_predictions_' + network_id,
                 prediction)
+        np.save(args.outputdir + '/loaded_intermediates_' + network_id,
+                intermediate_out)
     else:
         np.save(args.outputdir + '/predictions_' + network_id,
                 prediction)
+        np.save(args.outputdir + '/intermediates_' + network_id,
+                intermediate_out)
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
