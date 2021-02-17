@@ -33,7 +33,7 @@ class hnn(tf.keras.Model):
         self.num_classes = num_classes
         # number of dense layers
         self.num_dense_layers = num_dense_layers
-
+        
         # create the layers
         temp_layers = []
         for i in range(num_layers):
