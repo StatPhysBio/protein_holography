@@ -32,8 +32,8 @@ class hnn(tf.keras.Model):
         # number of classes possible in classification task
         self.num_classes = num_classes
         # number of dense layers
-        self.num_dense_layers = num_dense_layers
-        
+        self.num_dense_layers = num_dense_layers*2
+
         # create the layers
         temp_layers = []
         for i in range(num_layers):
@@ -43,6 +43,9 @@ class hnn(tf.keras.Model):
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
         for i in range(num_dense_layers):
+            temp_layers.append(
+                tf.keras.layers.BatchNormalization()
+                )
             temp_layers.append(
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
@@ -61,13 +64,13 @@ class hnn(tf.keras.Model):
         scalar_output = []
         # variable to keep track of the latest nodes in the network computation
         curr_nodes = input
-
+        self.input_ = input
         # begin recording scalar output with the input 
         scalar_output.append(curr_nodes[0])
         
         # compute the layers in the network while recording the scalar output 
         # after the nonlinearity steps
-        for layer in self.layers_[:-1]:
+        for layer in self.layers_[:-2]:
             curr_nodes = layer(curr_nodes)
             if isinstance(layer,(nonlinearity.Nonlinearity)):
                 scalar_output.append(curr_nodes[0])
@@ -86,4 +89,6 @@ class hnn(tf.keras.Model):
             scalar_output = self.layers_[-self.num_dense_layers+i](scalar_output)
         return scalar_output
             
-        
+    @tf.function
+    def model(self):
+        return tf.keras.Model(inputs=[self.input_],outputs=self.call(self.input_))
