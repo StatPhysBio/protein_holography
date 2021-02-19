@@ -6,6 +6,7 @@
 from keras import backend as K
 from keras.engine import InputSpec
 from keras.layers import BatchNormalization
+
 import tensorflow as tf
 
 
@@ -80,14 +81,16 @@ class LBatchNorm(BatchNormalization):
         self.built = True
         
     def _get_training_value(self, training=None):
+        tf.print('Learning phase = {}'.format(K.learning_phase()))
         if training is None:
             training = K.learning_phase()
         return training
 
         
     
-    @tf.function
+#    @tf.function
     def call(self, inputs, training=None):
+        tf.print('BN called on {} '.format(inputs))
 #        print('inputs = ' + str(inputs))
         def broadcast_to_input_shape(tensor,input_shape):
 #            print(type(tensor))
@@ -97,7 +100,7 @@ class LBatchNorm(BatchNormalization):
             return bc_tensor
 
         training = self._get_training_value(training)
-        
+        tf.print('training status = {}'.format(training))
         input_shape = tf.shape(inputs)
         ndim = len(input_shape)
         reduction_axes = list(range(len(input_shape)))
@@ -147,12 +150,12 @@ class LBatchNorm(BatchNormalization):
 
         else: # training
             # compute the current norm
-            norms = tf.einsum('nc,nc->ncm',
+            norms = tf.einsum('ncm,ncm->ncm',
                                inputs,
                                tf.math.conj(inputs))
-            curr_mean_norm_per_channel = tf.reduce_mean(norms,axis=(0,-1))
+            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0,-1)))
             zero_mean = tf.zeros(shape=input_shape)
-            
+            tf.print('curr mean norm = {}'.format(curr_mean_norm_per_channel))
             # update moving norm
             self.add_update(
                 [K.moving_average_update(
@@ -168,8 +171,8 @@ class LBatchNorm(BatchNormalization):
 #            print(self.moving_mean)
             broadcast_mean = broadcast_to_input_shape(self.moving_mean,
                                                       input_shape)
-#            broadcast_variance = broadcast_to_input_shape(curr_mean_norm_per_channel,
-            broadcast_variance = broadcast_to_input_shape(self.moving_variance,
+            broadcast_variance = broadcast_to_input_shape(curr_mean_norm_per_channel,
+#            broadcast_variance = broadcast_to_input_shape(self.moving_variance,
                                                       input_shape)
             if self.scale:
                 broadcast_gamma = broadcast_to_input_shape(self.moving_gamma,
