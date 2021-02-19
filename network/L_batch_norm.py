@@ -1,5 +1,6 @@
 #
-# Equivariant Batch Normalization Layer
+# Equivariant batch normalization module for taking
+# batch norm of a given L
 #
 
 from keras import backend as K
@@ -7,14 +8,14 @@ from keras.engine import InputSpec
 from keras.layers import BatchNormalization
 import tensorflow as tf
 
-class SphericalBatchNorm(BatchNormalization):
+class LBatchNorm(BatchNormalization):
 
     def __init__(self,axis=-2,momentum=0.99, epsilon=1e-3, center=False, scale=False,
                  beta_initializer='zeros',gamma_initializer='ones',
                  moving_mean_initializer='zeros', moving_variance_initializer='ones',
                  beta_regularizer=None, gamma_regularizer=None, beta_constraint=None,
                  gamma_constraint=None, **kwargs):
-        super(SphericalBatchNorm, self).__init__(axis=axis, momentum=momentum, epsilon=epsilon,
+        super(LBatchNorm, self).__init__(axis=axis, momentum=momentum, epsilon=epsilon,
                                                  center=center, scale=scale, 
                                                  beta_initializer=beta_initializer,
                                                  gamma_initializer=gamma_initializer,
@@ -76,14 +77,23 @@ class SphericalBatchNorm(BatchNormalization):
             trainable=False)
 
         self.built = True
+        
+    def _get_training_value(self, training=None):
+        if training is None:
+            training = K.learning_phase()
+        return training
 
+        
+    
+    @tf.function
     def call(self, inputs, training=None):
         def broadcast_to_input_shape(tensor,input_shape):
             extra_dim_tensor = tensor[tf.newaxis,:,tf.newaxis]
             bc_tensor = tf.broadcast_to(extra_dim_tensor,input_shape)
             return bc_tensor
 
-
+        training = self._get_training_value(training)
+        
         input_shape = K.int_shape(inputs)
         ndim = len(input_shape)
         reduction_axes = list(range(len(input_shape)))
@@ -132,10 +142,10 @@ class SphericalBatchNorm(BatchNormalization):
 
         else: # training
             # compute the current norm
-            norms = tf.einsum('ncm,ncm->nc',
+            norms = tf.einsum('ncm,ncm->ncm',
                                inputs,
                                tf.math.conj(inputs))
-            curr_mean_norm_per_channel = tf.reduce_mean(norms,axis=0)
+            curr_mean_norm_per_channel = tf.reduce_mean(norms,axis=(0,-1))
             zero_mean = tf.zeros(shape=input_shape)
             
             # update moving norm
