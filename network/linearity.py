@@ -38,7 +38,7 @@ class Linearity(tf.keras.layers.Layer):
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
-                                              regularizer=tf.keras.regularizers.l1(0.00001),
+                                              regularizer=tf.keras.regularizers.l1(0.001),
                                               trainable=True,
                                               name="W_real_" + str(self.layer_id) + "_" + str(l))
 
@@ -47,7 +47,7 @@ class Linearity(tf.keras.layers.Layer):
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
-                                              regularizer=tf.keras.regularizers.l1(0.00001),
+                                              regularizer=tf.keras.regularizers.l1(0.001),
                                               trainable=True,
                                               name="W_imag_" + str(self.layer_id) + "_" + str(l))
 

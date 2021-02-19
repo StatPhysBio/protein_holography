@@ -11,12 +11,12 @@ import tensorflow as tf
 import L_batch_norm as lbn
 
 class SphericalBatchNorm(tf.keras.layers.Layer):
-    def __init__(self, layer_id, L_MAX, **kwargs):
+    def __init__(self, layer_id, L_MAX, scale=False, **kwargs):
         super().__init__(**kwargs)
         self.L_MAX = L_MAX
         self.layers = []
         for l in range(L_MAX + 1):
-            self.layers.append(lbn.LBatchNorm())
+            self.layers.append(lbn.LBatchNorm(scale=scale))
         
 
     def _get_training_value(self, training=None):
@@ -29,5 +29,5 @@ class SphericalBatchNorm(tf.keras.layers.Layer):
         training = self._get_training_value(training)
         output = {}
         for l in range(self.L_MAX + 1):
-            output[l] = self.layers[l](input[l],training)
+            output[l] = 1e-4*self.layers[l](input[l],training)
         return output
