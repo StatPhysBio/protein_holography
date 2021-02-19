@@ -32,7 +32,7 @@ class hnn(tf.keras.Model):
         # number of classes possible in classification task
         self.num_classes = num_classes
         # number of dense layers
-        self.num_dense_layers = num_dense_layers*2
+        self.num_dense_layers = num_dense_layers
 
         # create the layers
         temp_layers = []
@@ -44,18 +44,15 @@ class hnn(tf.keras.Model):
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
         for i in range(num_dense_layers):
             temp_layers.append(
-                tf.keras.layers.BatchNormalization()
-                )
-            temp_layers.append(
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
                     kernel_regularizer=tf.keras.regularizers.l1(0.00001),                    
                 )
             )
-
+        print(temp_layers)
         # assignment of layers to a class feature
-        self.layers_ = temp_layers
+        self.layers_ = temp_layer
 
     @tf.function
     def call(self, input):
@@ -70,7 +67,7 @@ class hnn(tf.keras.Model):
         
         # compute the layers in the network while recording the scalar output 
         # after the nonlinearity steps
-        for layer in self.layers_[:-2]:
+        for layer in self.layers_[:-self.num_dense_layers]:
             curr_nodes = layer(curr_nodes)
             if isinstance(layer,(nonlinearity.Nonlinearity)):
                 scalar_output.append(curr_nodes[0])
