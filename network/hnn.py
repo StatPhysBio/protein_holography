@@ -6,6 +6,7 @@
 # classify the scalar output of every layer in the CG network.
 #
 
+import keras.backend as K
 import tensorflow as tf
 import linearity
 import nonlinearity
@@ -59,9 +60,9 @@ class hnn(tf.keras.Model):
         # assignment of layers to a class feature
         self.layers_ = temp_layers
 
-    @tf.function
+#    @tf.function
     def call(self, input):
-        
+        tf.print('hnn call learning phase = {}'.format(K.learning_phase()))
         # list to keep track of scalar output at each layer
         scalar_output = []
         # variable to keep track of the latest nodes in the network computation
