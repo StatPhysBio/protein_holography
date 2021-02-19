@@ -29,5 +29,5 @@ class SphericalBatchNorm(tf.keras.layers.Layer):
         training = self._get_training_value(training)
         output = {}
         for l in range(self.L_MAX + 1):
-            output[l] = 1e-4*self.layers[l](input[l],training)
+            output[l] = 1.*self.layers[l](input[l],training)
         return output

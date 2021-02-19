@@ -52,7 +52,7 @@ class hnn(tf.keras.Model):
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(0.001),                    
+                    kernel_regularizer=tf.keras.regularizers.l1(0.000001),                    
                 )
             )
         print(temp_layers)

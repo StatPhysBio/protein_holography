@@ -147,7 +147,7 @@ class LBatchNorm(BatchNormalization):
 
         else: # training
             # compute the current norm
-            norms = tf.einsum('nc,nc->ncm',
+            norms = tf.einsum('ncm,ncm->ncm',
                                inputs,
                                tf.math.conj(inputs))
             curr_mean_norm_per_channel = tf.reduce_mean(norms,axis=(0,-1))
