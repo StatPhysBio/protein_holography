@@ -9,6 +9,7 @@
 import tensorflow as tf
 import linearity
 import nonlinearity
+import spherical_batch_norm as sbn
 
 class hnn(tf.keras.Model):
     
@@ -42,17 +43,21 @@ class hnn(tf.keras.Model):
             else:
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
+            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX))
         for i in range(num_dense_layers):
+            temp_layers.append(
+                tf.keras.layers.Dropout(0.3)
+            )
             temp_layers.append(
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(0.00001),                    
+                    kernel_regularizer=tf.keras.regularizers.l1(0.001),                    
                 )
             )
         print(temp_layers)
         # assignment of layers to a class feature
-        self.layers_ = temp_layer
+        self.layers_ = temp_layers
 
     @tf.function
     def call(self, input):
@@ -67,9 +72,9 @@ class hnn(tf.keras.Model):
         
         # compute the layers in the network while recording the scalar output 
         # after the nonlinearity steps
-        for layer in self.layers_[:-self.num_dense_layers]:
+        for layer in self.layers_[:-self.num_dense_layers*2]:
             curr_nodes = layer(curr_nodes)
-            if isinstance(layer,(nonlinearity.Nonlinearity)):
+            if isinstance(layer,(sbn.SphericalBatchNorm)):
                 scalar_output.append(curr_nodes[0])
 
         # transform scalar output from list of complex with dimensions 
@@ -82,8 +87,9 @@ class hnn(tf.keras.Model):
                         )
 
         # feed scalar output into dense layer
-        for i in range(self.num_dense_layers):
-            scalar_output = self.layers_[-self.num_dense_layers+i](scalar_output)
+        for i in range(self.num_dense_layers*2):
+            print(self.layers_[-2*self.num_dense_layers+i])
+            scalar_output = self.layers_[-2*self.num_dense_layers+i](scalar_output)
         return scalar_output
             
     @tf.function
