@@ -81,7 +81,7 @@ class LBatchNorm(BatchNormalization):
         self.built = True
         
     def _get_training_value(self, training=None):
-        tf.print('Learning phase = {}'.format(K.learning_phase()))
+#        tf.print('Learning phase = {}'.format(K.learning_phase()))
         if training is None:
             training = K.learning_phase()
         return training
@@ -90,7 +90,7 @@ class LBatchNorm(BatchNormalization):
     
 #    @tf.function
     def call(self, inputs, training=None):
-        tf.print('BN called on {} '.format(inputs))
+#        tf.print('BN called on {} '.format(inputs))
 #        print('inputs = ' + str(inputs))
         def broadcast_to_input_shape(tensor,input_shape):
 #            print(type(tensor))
@@ -100,7 +100,7 @@ class LBatchNorm(BatchNormalization):
             return bc_tensor
 
         training = self._get_training_value(training)
-        tf.print('training status = {}'.format(training))
+#        tf.print('training status = {}'.format(training))
         input_shape = tf.shape(inputs)
         ndim = len(input_shape)
         reduction_axes = list(range(len(input_shape)))
@@ -119,12 +119,12 @@ class LBatchNorm(BatchNormalization):
             broadcast_variance = broadcast_to_input_shape(self.moving_variance,
                                                       input_shape)
             if self.scale:
-                broadcast_gamma = broadcast_to_input_shape(self.moving_gamma,
+                broadcast_gamma = broadcast_to_input_shape(self.gamma,
                                                       input_shape)
             else:
                 broadcast_gamma = None
             if self.center:
-                broadcast_beta = broadcast_to_input_shape(self.moving_beta,
+                broadcast_beta = broadcast_to_input_shape(self.beta,
                                                       input_shape)
             else:
                 broadcast_beta = None
@@ -155,7 +155,7 @@ class LBatchNorm(BatchNormalization):
                                tf.math.conj(inputs))
             curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0,-1)))
             zero_mean = tf.zeros(shape=input_shape)
-            tf.print('curr mean norm = {}'.format(curr_mean_norm_per_channel))
+#            tf.print('curr mean norm = {}'.format(curr_mean_norm_per_channel))
             # update moving norm
             self.add_update(
                 [K.moving_average_update(
@@ -175,12 +175,12 @@ class LBatchNorm(BatchNormalization):
 #            broadcast_variance = broadcast_to_input_shape(self.moving_variance,
                                                       input_shape)
             if self.scale:
-                broadcast_gamma = broadcast_to_input_shape(self.moving_gamma,
+                broadcast_gamma = broadcast_to_input_shape(self.gamma,
                                                       input_shape)
             else:
                 broadcast_gamma = None
             if self.center:
-                broadcast_beta = broadcast_to_input_shape(self.moving_beta,
+                broadcast_beta = broadcast_to_input_shape(self.beta,
                                                       input_shape)
             else:
                 broadcast_beta = None

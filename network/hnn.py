@@ -39,21 +39,24 @@ class hnn(tf.keras.Model):
         # create the layers
         temp_layers = []
         for i in range(num_layers):
+
             if i == 0:
+                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))
             else:
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
+#                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
-            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX))
+            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         for i in range(num_dense_layers):
             temp_layers.append(
-                tf.keras.layers.Dropout(0.3)
+                tf.keras.layers.Dropout(0.5)
             )
             temp_layers.append(
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(0.000001),                    
+                    kernel_regularizer=tf.keras.regularizers.l1(1e-5),                    
                 )
             )
         print(temp_layers)
@@ -62,7 +65,7 @@ class hnn(tf.keras.Model):
 
 #    @tf.function
     def call(self, input):
-        tf.print('hnn call learning phase = {}'.format(K.learning_phase()))
+#        tf.print('hnn call learning phase = {}'.format(K.learning_phase()))
         # list to keep track of scalar output at each layer
         scalar_output = []
         # variable to keep track of the latest nodes in the network computation
@@ -75,7 +78,7 @@ class hnn(tf.keras.Model):
         # after the nonlinearity steps
         for layer in self.layers_[:-self.num_dense_layers*2]:
             curr_nodes = layer(curr_nodes)
-            if isinstance(layer,(sbn.SphericalBatchNorm)):
+            if isinstance(layer,(sbn.SphericalBatchNorm)):# and layer == self.layers_[-self.num_dense_layers*2 - 1]:
                 scalar_output.append(curr_nodes[0])
 
         # transform scalar output from list of complex with dimensions 

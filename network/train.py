@@ -15,6 +15,8 @@ import sys, os
 import logging
 from argparse import ArgumentParser
 import naming
+import math
+import keras.backend as K
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -138,7 +140,7 @@ args =  parser.parse_args()
 train_data_id = naming.get_data_id(args)
 val_data_id = naming.get_val_data_id(args)
 network_id = naming.get_network_id(args)
-
+print(train_data_id)
 logging.info("GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
 #tf.config.threading.set_intra_op_parallelism_threads(4)
 #tf.config.threading.set_inter_op_parallelism_threads(4)
@@ -182,6 +184,7 @@ def confidence(truth,pred):
     return tf.math.reduce_max(tf.nn.softmax(pred))
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
+#optimizer = tf.keras.optimizers.SGD(learning_rate=args.learnrate[0])
 
 network.compile(optimizer=optimizer,
                 loss=loss_fn,
@@ -195,7 +198,7 @@ network.compile(optimizer=optimizer,
 
 
 # training dataset shouldn't be truncated unless testing
-ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
+#ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 ds_val_trunc = ds_val.batch(128)
 
 network.evaluate(ds_train.batch(1).take(1))
@@ -209,22 +212,78 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     monitor='loss',
     mode='min',
     save_best_only=True)
-
+        
 early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor='loss', patience=20, mode='min', min_delta=0.0001)
+    monitor='loss', patience=3, mode='min', min_delta=0.0001)
+ 
+
+# get initial batch size
+bs = args.bsize[0]
 
 try:
     try:
-#        print('not loading')
-        network.load_weights(checkpoint_filepath)
+        print('not loading')
+#        network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
-    history = network.fit(ds_train_trunc, epochs=5000, shuffle=True,
+    # epoch_counter = 0
+    # fails = 0
+    # stepsize = 50
+    # maxLR = 10*args.learnrate[0]
+    # optLR = args.learnrate[0]
+    while bs <= 3000:
+        # batch training set according to new batch size
+        ds_train_trunc = ds_train.batch(bs)
+
+        # stop after 3 epochs without decrease in loss
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='loss', patience=20, mode='min', min_delta=0.0001)
+        # cycle = np.floor(1 + epoch_counter / (2 * stepsize))
+        # x = np.abs(epoch_counter/stepsize - 2 * cycle + 1)
+        # curr_lr = optLR + (maxLR - optLR) * np.maximum(0, 1-x)
+        # K.set_value(network.optimizer.learning_rate, curr_lr)
+        # print('learnrate set to {}'.format(curr_lr))
+        # # train network with new batch size
+        history = network.fit(ds_train_trunc, epochs=500, shuffle=True,
+                              validation_data=ds_val_trunc, 
+                              verbose = args.verbosity,
+                              callbacks=[model_checkpoint_callback,
+                                         early_stopping])
+        
+#        print(history.history)
+        # if len(history.history['loss']) < 50:
+        #     fails += 1
+        print('Increasing batch size from {} to {}'.format(bs,bs*8))
+#        epoch_counter += 10
+#        if fails > 5:
+        bs = bs*8
+        #fails = 0
+
+
+except KeyboardInterrupt:
+    logging.warning("KeyboardInterrupt received. Exiting.")
+    sys.exit(os.EX_SOFTWARE)
+
+
+try:
+
+    # batch training set according to new batch size
+    ds_train_trunc = ds_train.batch(bs)
+    
+    # stop after 3 epochs without decrease in loss
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor='val_loss', patience=200, mode='min', min_delta=0.0001)
+    
+    # train network with new batch size
+    history = network.fit(ds_train_trunc, epochs=1000, shuffle=True,
                           validation_data=ds_val_trunc, 
                           verbose = args.verbosity,
                           callbacks=[model_checkpoint_callback,
                                      early_stopping])
+        
     print(history.history)
+
+
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
