@@ -103,7 +103,7 @@ def zernike_coeff_lm(r,t,p,n,r_max,l,m):
     B = np.sqrt(2.*n + D)
     C = sp.special.binom(int((n+l+D)/2. - 1),
                          int((n-l)/2.))
-    E = sp.special.hyp2f1(-(n-1)/2.,
+    E = sp.special.hyp2f1(-(n-l)/2.,
                            (n+l+D)/2.,
                            l+D/2.,
                            np.array(r)/r_max*np.array(r)/r_max)
