@@ -9,6 +9,7 @@
 import tensorflow as tf
 import linearity
 import nonlinearity
+import spherical_batch_norm as sbn
 
 class hnn_intermediate(tf.keras.Model):
     
@@ -41,10 +42,14 @@ class hnn_intermediate(tf.keras.Model):
         temp_layers = []
         for i in range(num_layers):
             if i == 0:
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))
+#                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))                
+                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             else:
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
+                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
+#            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         for i in range(num_dense_layers):
             temp_layers.append(
                 tf.keras.layers.Dense(
@@ -64,7 +69,7 @@ class hnn_intermediate(tf.keras.Model):
         scalar_output = []
         
         # list to keep track of the outputs from all layers
-        intermediate_output = []
+        intermediate_output = {}
 
         # variable to keep track of the latest nodes in the network computation
         curr_nodes = input
@@ -73,13 +78,14 @@ class hnn_intermediate(tf.keras.Model):
         scalar_output.append(curr_nodes[0])
         
         # record the inputs as the first intermediate outputs
-        intermediate_output.append(curr_nodes)
+        intermediate_output['input'] = curr_nodes
 
         # compute the layers in the network while recording the scalar output 
         # after the nonlinearity steps
         for i,layer in enumerate(self.layers_[:-1]):
             curr_nodes = layer(curr_nodes)
-            intermediate_output.append(curr_nodes)
+            intermediate_output[layer.name] = curr_nodes
+#            if isinstance(layer,(sbn.SphericalBatchNorm)):
             if isinstance(layer,(nonlinearity.Nonlinearity)):
                 scalar_output.append(curr_nodes[0])
 
@@ -92,8 +98,11 @@ class hnn_intermediate(tf.keras.Model):
                             tf.concat([scalar_out_real,scalar_out_imag], axis=1), axis=-1
                         )
 
+        intermediate_output['scalar input'] = scalar_output
         # feed scalar output into dense layer
         for i in range(self.num_dense_layers):
             scalar_output = self.layers_[-self.num_dense_layers+i](scalar_output)
+        intermediate_output['output energies'] = scalar_output
+
         return intermediate_output
             
