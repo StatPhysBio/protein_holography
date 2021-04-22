@@ -7,8 +7,10 @@
 #
 import copy
 
-def get_id_from_params(args,ignore_params):
+def get_id_from_params(args,ignore_params,network=False):
     params = {}
+    #if network:
+    args.k = [args.k[0],args.k[-1]]
     for arg in vars(args):
         if arg in ignore_params:
             continue
@@ -43,6 +45,6 @@ def get_val_data_id(args):
     return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
-    ignore_params = ['datadir','outputdir','verbosity','learnrate','bsize','load']
-    return get_id_from_params(args,ignore_params)
+    ignore_params = ['datadir','outputdir','verbosity','load']
+    return get_id_from_params(args,ignore_params,network=True)
 
