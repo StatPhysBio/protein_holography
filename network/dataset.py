@@ -22,18 +22,51 @@ def get_dataset(data_dir, data_id):
                      encoding='latin1')
     return tf.data.Dataset.from_tensor_slices((hgrams,labels))
 
+def get_ss_dataset(data_dir, data_id):
+
+    hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')[()]
+    print('/'.join([data_dir,data_id + '.npy']))
+#     # assemble complex holograms from real and imaginary parts
+#     hgrams = {}                                                                                                                                                                             
+#     for l in range(l_max + 1):
+#         hgrams[l] = (hgrams_real[l] +                                                                                                                                                        
+#                      1j * hgrams_imag[l]).astype("complex64")
+
+    labels = np.load('/'.join([data_dir,'ss_labels_' + data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')
+    return tf.data.Dataset.from_tensor_slices((hgrams,labels))
+
+
 def get_inputs(data_dir, data_id):
 
     hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
                      allow_pickle=True,
                      encoding='latin1')[()]
     for i in hgrams.keys():
-        hgrams[i] = tf.convert_to_tensor(hgrams[i])
+        hgrams[i] = tf.convert_to_tensor(hgrams[i][:100])
     print('/'.join([data_dir,data_id + '.npy']))
 
     labels = np.load('/'.join([data_dir,'labels_' + data_id + '.npy']),
                      allow_pickle=True,
-                     encoding='latin1')
+                     encoding='latin1')[:100]
+
+    return hgrams,labels
+
+def get_ss_inputs(data_dir, data_id):
+
+    hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')[()]
+    for i in hgrams.keys():
+        hgrams[i] = tf.convert_to_tensor(hgrams[i][:100])
+    print('/'.join([data_dir,data_id + '.npy']))
+
+    labels = np.load('/'.join([data_dir,'ss_labels_' + data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')[:100]
 
     return hgrams,labels
 
