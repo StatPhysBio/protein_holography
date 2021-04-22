@@ -22,6 +22,21 @@ def get_dataset(data_dir, data_id):
                      encoding='latin1')
     return tf.data.Dataset.from_tensor_slices((hgrams,labels))
 
+def get_inputs(data_dir, data_id):
+
+    hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')[()]
+    for i in hgrams.keys():
+        hgrams[i] = tf.convert_to_tensor(hgrams[i])
+    print('/'.join([data_dir,data_id + '.npy']))
+
+    labels = np.load('/'.join([data_dir,'labels_' + data_id + '.npy']),
+                     allow_pickle=True,
+                     encoding='latin1')
+
+    return hgrams,labels
+
 def get_equivariance_test_dataset(data_dir, data_id, L_MAX):
     alpha = np.random.uniform(0,2*np.pi)
     beta = np.random.uniform(0,np.pi)

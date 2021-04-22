@@ -24,7 +24,7 @@ class SphericalBatchNorm(tf.keras.layers.Layer):
             training = K.learning_phase()
         return training
 
-#    @tf.function
+    @tf.function
     def call(self,input,training=None):
         training = self._get_training_value(training)
         output = {}
