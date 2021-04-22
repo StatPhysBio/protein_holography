@@ -16,7 +16,7 @@ class hnn(tf.keras.Model):
     
     def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, num_dense_layers, scale,
                  **kwargs):
-
+        print('hnn n classes = {}'.format(num_classes))
         # call to the super function tf.keras.Model
         super().__init__(**kwargs)
 
@@ -41,22 +41,24 @@ class hnn(tf.keras.Model):
         for i in range(num_layers):
 
             if i == 0:
-                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+#                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))
+                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             else:
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
-#                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
-            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+#            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         for i in range(num_dense_layers):
             temp_layers.append(
-                tf.keras.layers.Dropout(0.5)
+                tf.keras.layers.Dropout(0.4)
             )
             temp_layers.append(
                 tf.keras.layers.Dense(
-                    num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
+                    num_classes,
+                    kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(1e-5),                    
+                    kernel_regularizer=tf.keras.regularizers.l1(1e-4),                    
                 )
             )
         print(temp_layers)
@@ -78,7 +80,8 @@ class hnn(tf.keras.Model):
         # after the nonlinearity steps
         for layer in self.layers_[:-self.num_dense_layers*2]:
             curr_nodes = layer(curr_nodes)
-            if isinstance(layer,(sbn.SphericalBatchNorm)):# and layer == self.layers_[-self.num_dense_layers*2 - 1]:
+#            if isinstance(layer,(sbn.SphericalBatchNorm)):
+            if isinstance(layer,(nonlinearity.Nonlinearity)):
                 scalar_output.append(curr_nodes[0])
 
         # transform scalar output from list of complex with dimensions 
