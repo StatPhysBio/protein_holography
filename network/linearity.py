@@ -62,7 +62,7 @@ class Linearity(tf.keras.layers.Layer):
 
     # compute the layer via tensor contraction
     @tf.function
-    def call(self, input): 
+    def call(self, input,training=None): 
         output = {}
         for l in range(self.L_MAX + 1):
 #            output[l] = tf.einsum("ij,bim->bjm",self.weights_[l],input[l])

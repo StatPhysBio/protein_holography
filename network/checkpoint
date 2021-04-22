@@ -1,0 +1,2 @@
+model_checkpoint_path: "temp_weights"
+all_model_checkpoint_paths: "temp_weights"

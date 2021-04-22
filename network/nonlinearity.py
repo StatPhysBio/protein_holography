@@ -19,7 +19,7 @@ class Nonlinearity(tf.keras.layers.Layer):
         self.cg_matrices = cg_matrices
 
     @tf.function
-    def call(self, input):
+    def call(self, input,training=None):
         output = {}
         for L in range(self.L_MAX + 1):
             output[L] = []

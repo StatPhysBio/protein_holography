@@ -1,14 +1,11 @@
 #
-# Equivariant batch normalization module for taking
-# batch norm of a given L
+# Equivariant Batch Normalization Layer
 #
 
 from keras import backend as K
 from keras.engine import InputSpec
 from keras.layers import BatchNormalization
-
 import tensorflow as tf
-
 
 class LBatchNorm(BatchNormalization):
 
@@ -17,7 +14,7 @@ class LBatchNorm(BatchNormalization):
                  moving_mean_initializer='zeros', moving_variance_initializer='ones',
                  beta_regularizer=None, gamma_regularizer=None, beta_constraint=None,
                  gamma_constraint=None, **kwargs):
-        super(LBatchNorm, self).__init__(axis=axis, momentum=momentum, epsilon=epsilon,
+        super(SphericalBatchNorm, self).__init__(axis=axis, momentum=momentum, epsilon=epsilon,
                                                  center=center, scale=scale, 
                                                  beta_initializer=beta_initializer,
                                                  gamma_initializer=gamma_initializer,
@@ -79,62 +76,47 @@ class LBatchNorm(BatchNormalization):
             trainable=False)
 
         self.built = True
-        
-    def _get_training_value(self, training=None):
-#        tf.print('Learning phase = {}'.format(K.learning_phase()))
-        if training is None:
-            tf.print('Learning phase in LBN train call = {}'.format(K.learning_phase()))
-            training = K.learning_phase()
-        return training
 
-        
-    
-    @tf.function
     def call(self, inputs, training=None):
-#        tf.print('BN called on {} '.format(inputs))
-#        print('inputs = ' + str(inputs))
         def broadcast_to_input_shape(tensor,input_shape):
-#            print(type(tensor))
-#            print(input_shape)
             extra_dim_tensor = tensor[tf.newaxis,:,tf.newaxis]
             bc_tensor = tf.broadcast_to(extra_dim_tensor,input_shape)
             return bc_tensor
 
-        training = self._get_training_value(training)
-#        tf.print('training status = {}'.format(training))
-        input_shape = tf.shape(inputs)
-        ndim = input_shape.shape[0]
-        reduction_axes = list(range(ndim))
+
+        input_shape = K.int_shape(inputs)
+        ndim = len(input_shape)
+        reduction_axes = list(range(len(input_shape)))
         del reduction_axes[self.axis]
-#        print('Reduction axes: ' + str(reduction_axes))
+        print('Reduction axes: ' + str(reduction_axes))
         
         if training in [0,False]:
 
             # broadcast all shapes to fit the inputs
-#            print('Initial shapes = {},{}'.format(self.moving_mean.shape,
-#                                                  self.moving_variance.shape)
-#                  )
+            print('Initial shapes = {},{}'.format(self.moving_mean.shape,
+                                                  self.moving_variance.shape)
+                  )
 
             broadcast_mean = broadcast_to_input_shape(self.moving_mean,
                                                       input_shape)
             broadcast_variance = broadcast_to_input_shape(self.moving_variance,
                                                       input_shape)
             if self.scale:
-                broadcast_gamma = broadcast_to_input_shape(self.gamma,
+                broadcast_gamma = broadcast_to_input_shape(self.moving_gamma,
                                                       input_shape)
             else:
                 broadcast_gamma = None
             if self.center:
-                broadcast_beta = broadcast_to_input_shape(self.beta,
+                broadcast_beta = broadcast_to_input_shape(self.moving_beta,
                                                       input_shape)
             else:
                 broadcast_beta = None
                 
             
             # broadcast all shapes to fit the inputs
-#            print('Final shapes = {},{}'.format(broadcast_mean.shape,
-#                                                broadcast_variance.shape)
-#                  )
+            print('Final shapes = {},{}'.format(broadcast_mean.shape,
+                                                broadcast_variance.shape)
+                  )
 
 
             # normalize the inputs
@@ -145,20 +127,17 @@ class LBatchNorm(BatchNormalization):
                 broadcast_beta,
                 broadcast_gamma,
                 epsilon=self.epsilon)
-#            print('Not training')
             return normalized_inputs
 
 
         else: # training
             # compute the current norm
-            norms = tf.einsum('ncm,ncm->ncm', # 2*l + 1
-#            norms = tf.einsum('ncm,ncm->nc', # for not dividing by 2*l+1
+            norms = tf.einsum('ncm,ncm->nc',
                                inputs,
                                tf.math.conj(inputs))
-            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0,-1))) # for dividing by 2*l+1
-#            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0))) # for not dividing by 2+l+1
+            curr_mean_norm_per_channel = tf.reduce_mean(norms,axis=0)
             zero_mean = tf.zeros(shape=input_shape)
-#            tf.print('curr mean norm = {}'.format(curr_mean_norm_per_channel))
+            
             # update moving norm
             self.add_update(
                 [K.moving_average_update(
@@ -168,31 +147,30 @@ class LBatchNorm(BatchNormalization):
                  ])
 
             # broadcast all shapes to fit the inputs
-#            print('Initial training shapes = {},{}'.format(self.moving_mean.shape,
-#                                                  curr_mean_norm_per_channel.shape)
-#                  )
-#            print(self.moving_mean)
+            print('Initial training shapes = {},{}'.format(self.moving_mean.shape,
+                                                  curr_mean_norm_per_channel.shape)
+                  )
+
             broadcast_mean = broadcast_to_input_shape(self.moving_mean,
                                                       input_shape)
             broadcast_variance = broadcast_to_input_shape(curr_mean_norm_per_channel,
-#            broadcast_variance = broadcast_to_input_shape(self.moving_variance,
                                                       input_shape)
             if self.scale:
-                broadcast_gamma = broadcast_to_input_shape(self.gamma,
+                broadcast_gamma = broadcast_to_input_shape(self.moving_gamma,
                                                       input_shape)
             else:
                 broadcast_gamma = None
             if self.center:
-                broadcast_beta = broadcast_to_input_shape(self.beta,
+                broadcast_beta = broadcast_to_input_shape(self.moving_beta,
                                                       input_shape)
             else:
                 broadcast_beta = None
                 
             
             # broadcast all shapes to fit the inputs
-#            print('Final shapes = {},{}'.format(broadcast_mean.shape,
-#                                                broadcast_variance.shape)
-#                  )
+            print('Final shapes = {},{}'.format(broadcast_mean.shape,
+                                                broadcast_variance.shape)
+                  )
 
 
             # normalize the inputs

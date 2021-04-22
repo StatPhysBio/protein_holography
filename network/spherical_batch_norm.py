@@ -1,7 +1,7 @@
 #
 # Equivariant batch normalization layer
 #
-# Uses L_batch_norm.py to take batch norm across all Ls of inputs
+
 #
 
 from keras import backend as K
@@ -26,7 +26,7 @@ class SphericalBatchNorm(tf.keras.layers.Layer):
 
     @tf.function
     def call(self,input,training=None):
-        training = self._get_training_value(training)
+        tf.print('SNB called with training = {}'.format(training))
         output = {}
         for l in range(self.L_MAX + 1):
             output[l] = 1.*self.layers[l](input[l],training)

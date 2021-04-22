@@ -65,6 +65,12 @@ class hnn(tf.keras.Model):
         # assignment of layers to a class feature
         self.layers_ = temp_layers
 
+    def _get_training_value(self, training=None):
+        if training is None:
+            training = K.learning_phase()
+        return training
+
+
 #    @tf.function
     def call(self, input):
 #        tf.print('hnn call learning phase = {}'.format(K.learning_phase()))
@@ -95,7 +101,6 @@ class hnn(tf.keras.Model):
 
         # feed scalar output into dense layer
         for i in range(self.num_dense_layers*2):
-            print(self.layers_[-2*self.num_dense_layers+i])
             scalar_output = self.layers_[-2*self.num_dense_layers+i](scalar_output)
         return scalar_output
             
