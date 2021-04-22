@@ -5,7 +5,8 @@ sbatch: |
   ## Allocation Definition
   ## The account and partition options should be the same except in a few cases (e.g. ckpt queue and genpool queue).
   #SBATCH --account={group}
-  #SBATCH --partition={group}
+  #SBATCH --partition={partition}
+  #SBATCH --gres=gpu:P100:1	
   ## Resources
   ## Total number of Nodes
   #SBATCH --nodes={nodes}
