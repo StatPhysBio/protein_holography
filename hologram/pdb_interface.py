@@ -5,6 +5,7 @@
 import os
 import protein
 import Bio.PDB as pdb
+import Bio.PDB.mmtf
 import numpy as np
 import hologram as hgm
 from geo import cartesian_to_spherical
@@ -669,7 +670,7 @@ def get_amino_acid_sample_from_protein_list(protein_list,
     # as well as the protein list
     protein_ind = 0
     aa_ind = 0
-
+    
     parser = pdb.PDBParser(QUIET=True)
 
     aa_sample = []
@@ -690,6 +691,81 @@ def get_amino_acid_sample_from_protein_list(protein_list,
         # then note the aa is not found and move on to the next protein
         sample_res = sample_protein.sample_amino_acid_from_protein(curr_struct,curr_protein,curr_aa)
         if sample_res == None:
+            #print('sample res == None')
+            continue
+        if len([x for x in sample_res]) != protein.atoms_per_aa[curr_aa]:
+            #print(len([x for x in sample_res]),protein.atoms_per_aa[curr_aa])
+            continue
+        aa_found = True
+        resname = sample_res.get_resname()
+        res_id = sample_res.get_full_id()
+        resname = sample_res.get_resname()
+        res_id = sample_res.get_full_id()
+        try:
+            dssp = DSSP(curr_struct[res_id[1]], curr_protein + '.pdb', dssp="/gscratch/stf/mpun/software/dssp-2.0.4-linux-amd64")
+        except Exception as e:
+            print(e)
+            continue
+        try:    
+            res_dssp = dssp[(res_id[2],res_id[3])]
+        except:
+            print(res_id)
+            continue
+        aa_info = (resname, res_id, res_dssp)
+        aa_sample.append(aa_info)
+        if aa_found ==True:
+            aa_ind += 1
+
+    return aa_sample
+
+    
+# returns the hologram coefficients of instances number of samples of each amino acid
+# randomly sampled from the protein list provided
+#
+# note about structure of this function: we want the data organized in l x N x n_c x m
+# In order to do this, we create a dictionary each time we take a sample. Simultaneously
+# we create a list of these dictionaries so that our data is in the order N x l x n_c x m
+# in order to reverse the first two indices, we stack the entries of each dictionary into
+# one np array of length N and index this under teh appropriate l in our ultimate data
+# structure
+def get_amino_acid_sample_from_protein_list_mmtf(protein_list,
+                                            protein_dir,
+                                            instances):
+
+
+    
+    # list of amino acids
+    amino_acids = list(protein.aa_to_ind.keys())
+    # a list of the amino acids we need to take samples of
+    aa_to_sample = amino_acids*instances
+
+    num_proteins = len(protein_list)
+       
+    # indices to keep track of location in the amino acids to sample list
+    # as well as the protein list
+    protein_ind = 0
+    aa_ind = 0
+    
+    parser = pdb.mmtf.MMTFParser()
+
+    aa_sample = []
+
+    while aa_ind < len(aa_to_sample):
+        if(aa_ind%20 == 0):
+            print(aa_ind)
+        # cool to keep track of whether or not the current amino acid was found
+        aa_found = False
+
+        # get the current aa and the current protein to check for this aa
+        curr_aa = aa_to_sample[aa_ind]
+        curr_protein = protein_list[protein_ind%num_proteins]
+        curr_struct = parser.get_structure(protein_dir + '/' + curr_protein + '.mmtf')
+        protein_ind += 1
+
+        # take sample residue from protein. If the given aa doesn't exist in this protein
+        # then note the aa is not found and move on to the next protein
+        sample_res = sample_protein.sample_amino_acid_from_protein(curr_struct,curr_protein,curr_aa)
+        if sample_res == None:
             continue
         if len([x for x in sample_res]) != protein.atoms_per_aa[curr_aa]:
             continue
@@ -698,16 +774,8 @@ def get_amino_acid_sample_from_protein_list(protein_list,
         res_id = sample_res.get_full_id()
         resname = sample_res.get_resname()
         res_id = sample_res.get_full_id()
-        try:
-            dssp = DSSP(curr_struct[res_id[1]], curr_protein + '.pdb')
-        except:
-            continue
-        try:    
-            res_dssp = dssp[(res_id[2],res_id[3])]
-        except:
-            print(res_id)
-            continue
-        aa_info = (resname, res_id, res_dssp)
+
+        aa_info = (resname, res_id)
         aa_sample.append(aa_info)
         if aa_found ==True:
             aa_ind += 1
