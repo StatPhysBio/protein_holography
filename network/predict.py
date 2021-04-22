@@ -222,6 +222,7 @@ try:
     try:
         if args.load:
             network.load_weights(checkpoint_filepath)
+            network.evaluate(ds_train.batch(1).take(1000))
         else:
             print('not loading')
     except:
