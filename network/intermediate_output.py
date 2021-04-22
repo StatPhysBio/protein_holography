@@ -263,7 +263,7 @@ try:
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-
+network.evaluate(ds_val.batch(128))
 
 logging.info('Terminating successfully')
 
