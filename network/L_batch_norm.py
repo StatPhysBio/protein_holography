@@ -88,7 +88,7 @@ class LBatchNorm(BatchNormalization):
 
         
     
-#    @tf.function
+    @tf.function
     def call(self, inputs, training=None):
 #        tf.print('BN called on {} '.format(inputs))
 #        print('inputs = ' + str(inputs))
@@ -102,8 +102,8 @@ class LBatchNorm(BatchNormalization):
         training = self._get_training_value(training)
 #        tf.print('training status = {}'.format(training))
         input_shape = tf.shape(inputs)
-        ndim = len(input_shape)
-        reduction_axes = list(range(len(input_shape)))
+        ndim = input_shape.shape[0]
+        reduction_axes = list(range(ndim))
         del reduction_axes[self.axis]
 #        print('Reduction axes: ' + str(reduction_axes))
         
@@ -150,10 +150,12 @@ class LBatchNorm(BatchNormalization):
 
         else: # training
             # compute the current norm
-            norms = tf.einsum('ncm,ncm->ncm',
+            norms = tf.einsum('ncm,ncm->ncm', # 2*l + 1
+#            norms = tf.einsum('ncm,ncm->nc', # for not dividing by 2*l+1
                                inputs,
                                tf.math.conj(inputs))
-            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0,-1)))
+            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0,-1))) # for dividing by 2*l+1
+#            curr_mean_norm_per_channel = tf.math.real(tf.reduce_mean(norms,axis=(0))) # for not dividing by 2+l+1
             zero_mean = tf.zeros(shape=input_shape)
 #            tf.print('curr mean norm = {}'.format(curr_mean_norm_per_channel))
             # update moving norm
