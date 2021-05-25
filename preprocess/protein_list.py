@@ -12,9 +12,10 @@
 from argparse import ArgumentParser
 import os
 import h5py
-import git
 import sys
-import time
+sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
+from posterity import get_metadata,record_metadata
+
 
 parser = ArgumentParser()
 
@@ -25,8 +26,8 @@ parser.add_argument(
     help='Directory for pdb files'
 )
 parser.add_argument(
-    '--ds_name',
-    dest='ds_name',
+    '--filename',
+    dest='filename',
     type=str,
     help='Name for the dataset'
 )
@@ -34,20 +35,14 @@ parser.add_argument(
     '--data_dir',
     dest='data_dir',
     type=str,
-    default='/gscratch/spe/mpun/protein_holography/data/',
+    default='/gscratch/spe/mpun/protein_holography/data',
     help='Directory to save data'
 )
 
 args = parser.parse_args()
 
-# posterity info
-#  command line arguments
-cline = ' '.join(sys.argv)
-#  git hash
-repo = git.Repo(search_parent_directories=True)
-sha = repo.head.object.hexsha
-#  time ran
-t = time.ctime()
+# get metadata
+metadata = get_metadata()
 
 # gather pdb names from pdb directory
 pdb_files = [x for x in os.listdir(args.pdb_dir) if '.pdb' in x]
@@ -55,22 +50,22 @@ pdb_files = [x for x in os.listdir(args.pdb_dir) if '.pdb' in x]
 # get names from pdbs
 pdb_names = [str.encode(x[:-4]) for x in pdb_files]
 
+# filepath 
+filepath = args.data_dir + '/' + args.filename
+
 # write names to dataset file
 try:
-    with h5py.File(args.ds_name + '.hdf5','w-') as f:
+    with h5py.File(filepath + '.hdf5','w-') as f:
         dset = f.create_dataset('pdb_list',
                                 data=pdb_names)
-        dset.attrs['time'] = t
-        dset.attrs['git_hash'] = sha
-        dset.attrs['command_line'] = cline
+        record_metadata(metadata,dset)
+
 except:
-    with h5py.File(args.ds_name + '.hdf5','r+') as f:
+    with h5py.File(filepath + '.hdf5','r+') as f:
         try:
             dset = f.create_dataset('pdb_list',
                                     data=pdb_names)
-            dset.attrs['time'] = t
-            dset.attrs['git_hash'] = sha
-            dset.attrs['command_line'] = cline
+            record_metadata(metadata,dset)
         except:
             print('Trying to create dataset that already exists')
     
