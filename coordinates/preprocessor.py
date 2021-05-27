@@ -42,6 +42,7 @@ def process_data(nb):
             warnings.simplefilter('ignore', PDBConstructionWarning)
             struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
     except:
+        print(nb)
         print('failed')
         return False
     
@@ -86,7 +87,7 @@ class PDBPreprocessor:
             data = self.__data[:limit]
         with Pool(initializer = initializer, processes=parallelism, initargs = (init, callback, params, init_params)) as pool:
 
-            all_loaded = functools.reduce(lambda x, y: x and y, pool.imap(load_data, data))
+            #all_loaded = functools.reduce(lambda x, y: x and y, pool.imap(load_data, data))
             all_loaded = True
             if all_loaded:
                 # logging.info('All PDB files are loaded.')
