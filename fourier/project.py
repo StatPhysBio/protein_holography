@@ -25,8 +25,9 @@ sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
 from posterity import get_metadata,record_metadata
 import protein
 import hologram as hgm
+import naming
 
-def c(coords,nb,ks,proj,lmax,rmax):
+def c(coords,nb,ks,proj,l,rmax):
     EL_CHANNEL_NUM = 4
     # turn coordinates into coefficients
 
@@ -39,7 +40,7 @@ def c(coords,nb,ks,proj,lmax,rmax):
     for k in ks:
         for curr_ch in range(EL_CHANNEL_NUM):
             curr_channel_coeffs = {}
-            for l in range(lmax + 1):
+            for l in range(l + 1):
                 # if the current channel has no signal then append zero holographic signal
                 if len(coords[curr_ch][0]) == 0:
                     curr_channel_coeffs[l] = np.array([0.]*(2*l+1))
@@ -60,7 +61,7 @@ def c(coords,nb,ks,proj,lmax,rmax):
     # coefficients gathered for every channel for this sample residue
     # channels_dicts currently has the structure n_c x l x m
     # we can now swap n_c and l
-    for l in range(lmax + 1):
+    for l in range(l + 1):
         curr_coeffs.append(np.stack([x[l] for x in channel_dicts]))
 #    print(curr_coeffs)
 
@@ -73,13 +74,16 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', dest='dataset', type=str, help='dataset file name', required=True)
     parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
     parser.add_argument('--invariants', dest='invariants', type=str, help='invariants file name', default='curated_invariants.txt')
-    parser.add_argument('-d', dest='d', type=float, help='radius', default=5.0)
+    parser.add_argument('-d', dest='d', type=float, help='radius', default=5.0,nargs='+')
     parser.add_argument('--easy', action='store_true', help='easy', default=False)
     parser.add_argument('--hdf5', dest='hdf5', type=str, help='hdf5 filename', default=False)
-    parser.add_argument('-k', dest='ks', type=float, nargs='+')
-    parser.add_argument('-L', dest='lmax', type=int)
-    parser.add_argument('--rmax', dest='rmax', type=float)
-    parser.add_argument('--proj', dest='proj', type=str,default='zgram')
+    parser.add_argument('-k', dest='k', type=complex, nargs='+')
+    parser.add_argument('--projection',dest='proj',help='radial projection',default=['zgram'],nargs='+')
+    parser.add_argument('--ch',dest='ch',help='channel description',nargs='+',default=None)
+    parser.add_argument('--rmax', dest='rmax', type=float, nargs='+', help='rescale radius for zernike', default=None)
+    parser.add_argument('-L', dest='l', type=int, help='maximum spherical order', default=[5], nargs='+')
+    parser.add_argument('-e', dest='e',help='examples',default=[128],nargs='+')
+
     args = parser.parse_args()
     
     # get metadata
@@ -94,8 +98,8 @@ if __name__ == "__main__":
     n = 0
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         for proj,nb in ds.execute(
-                c, limit = None, params = {'ks': args.ks, 'proj': args.proj, 'lmax': args.lmax,
-                                           'rmax': args.rmax},
+                c, limit = None, params = {'ks': args.k, 'proj': args.proj[0], 'l': args.l[0],
+                                           'rmax': args.rmax[0]},
                 parallelism = args.parallelism):
             name = nb[1].decode('utf-8')
             nh = (int(nb[2].decode('utf-8')),
@@ -108,7 +112,11 @@ if __name__ == "__main__":
             nh_name = "{}/{}/{}/".format(name,nh,10.)
 
             with h5py.File('/gscratch/spe/mpun/protein_holography/data/fourier/casp11_training30.hdf5','r+') as f:
-                for l in range(args.lmax):
+                a.append(proj)
+                zer = np.zeros(20)
+                zer[protein.aa_to_ind[nb[0].decode('utf-8')]] = 1.
+                hgm_labels.append(zer)
+                for l in range(args.l[0] + 1):
 
                     #    print(proj[l])
                     
@@ -127,4 +135,18 @@ if __name__ == "__main__":
             bar.next()
 
 
+    data_id = naming.get_data_id(args)
+    print(data_id)
 
+    hgm_coeffs = {}
+    hgm_coeffs_real = {}
+    hgm_coeffs_imag = {}
+
+    for l in range(args.l[0]+1):
+        hgm_coeffs[l] = np.stack([x[l] for x in a]).astype('complex64')
+
+    for k in hgm_coeffs.keys():
+        print('key ',k)
+        print(hgm_coeffs[k].shape)
+    np.save('../data/zgram/' + data_id,hgm_coeffs)
+    np.save('../data/zgram/labels_'+data_id,hgm_labels)
