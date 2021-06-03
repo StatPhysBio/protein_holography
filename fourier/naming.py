@@ -5,11 +5,9 @@
 #  - training logs from equivariant neural networks
 #  - equivariant neural network weights
 #
-import copy
 
-def get_id_from_params(args,ignore_params,network=False):
+def get_id_from_params(args,ignore_params):
     params = {}
-    #if network:
     args.k = [args.k[0],args.k[-1]]
     for arg in vars(args):
         if arg in ignore_params:
@@ -17,6 +15,7 @@ def get_id_from_params(args,ignore_params,network=False):
         if getattr(args,arg) == None:
             continue
         params[arg] = getattr(args,arg)
+    
     tag = '_'.join(map(
             lambda x: str(x) + '=' + str(
                 '+'.join(
@@ -29,27 +28,23 @@ def get_data_id(args):
                      'verbosity','bsize',
                      'learnrate','hdim',
                      'nlayers','eVal',
-                     'scale','load',
-                     'netL','dropout_rate',
-                     'n_dense','reg_strength'
-] 
+                     'dataset','invariants',
+                     'parallelism','easy',
+                     'output','hdf5'] 
     return get_id_from_params(args,ignore_params)
 
 def get_val_data_id(args):
-    val_args = copy.deepcopy(args)
-    val_args.e = args.eVal
     ignore_params = ['datadir','outputdir',
                      'verbosity','bsize',
                      'learnrate','hdim',
-                     'nlayers','eVal',
-                     'scale','load',
-                     'netL','dropout_rate',
-                     'netL','dropout_rate',
-                     'n_dense','reg_strength'
-] 
-    return get_id_from_params(val_args,ignore_params)
+                     'nlayers','e',
+                     'dataset','invariants',
+                     'parallelism','easy','hdf5']  
+    return get_id_from_params(args,ignore_params)
 
 def get_network_id(args):
-    ignore_params = ['datadir','outputdir','verbosity','load']
-    return get_id_from_params(args,ignore_params,network=True)
+    ignore_params = ['datadir','outputdir','verbosity',
+                     'dataset','invariants',
+                     'parallelism','easy','hdf5'] 
+    return get_id_from_params(args,ignore_params)
 

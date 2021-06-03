@@ -136,6 +136,24 @@ parser.add_argument('--scale',
                     nargs='+',
                     default=None,
                     help='scale for rescaling inputs')
+parser.add_argument('--dropout',
+                    dest='dropout_rate',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='rate for dropout')
+parser.add_argument('--reg',
+                    dest='reg_strength',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='strength for regularization (typically l1 or l2')
+parser.add_argument('--n_dense',
+                    dest='n_dense',
+                    type=int,
+                    nargs='+',
+                    default=None,
+                    help='number of dense layers to put at end of network')
 
 args =  parser.parse_args()
 
@@ -175,10 +193,11 @@ logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
     args.netL[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, 1, args.scale[0])
+    tf_cg_matrices, args.n_dense[0], 
+    args.reg_strength[0], args.dropout_rate[0], args.scale[0])
 
 
-@tf.function
+tf.function
 def loss_fn(truth, pred):
     return tf.nn.softmax_cross_entropy_with_logits(
         labels = truth,
