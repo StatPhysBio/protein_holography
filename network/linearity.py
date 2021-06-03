@@ -13,12 +13,13 @@
 import tensorflow as tf
 
 class Linearity(tf.keras.layers.Layer):
-    def __init__(self, l_dims, layer_id, L_MAX, scale=1.0, **kwargs):
+    def __init__(self, l_dims, layer_id, L_MAX, reg_strength, scale=1.0, **kwargs):
         super().__init__(**kwargs)
         self.l_dims = l_dims # list of channel dimension for each order l
         self.L_MAX = L_MAX
         self.layer_id = layer_id # typically the number of the layer in the network
         self.scale = scale
+        self.reg_strength = reg_strength
 
     # set up the weight matrices used in the linear combination
     def build(self, input_shape): # input takes shape l x c(l,i-1) x m(l)
@@ -38,7 +39,7 @@ class Linearity(tf.keras.layers.Layer):
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
-                                              regularizer=tf.keras.regularizers.l1(1e-4),
+                                              regularizer=tf.keras.regularizers.l1(self.reg_strength),
                                               trainable=True,
                                               name="W_real_" + str(self.layer_id) + "_" + str(l))
 
@@ -47,7 +48,7 @@ class Linearity(tf.keras.layers.Layer):
                                                      output_dims[l]],
                                               dtype=tf.dtypes.float32,
                                               initializer=weights_initializer,
-                                              regularizer=tf.keras.regularizers.l1(1e-4),
+                                              regularizer=tf.keras.regularizers.l1(self.reg_strength),
                                               trainable=True,
                                               name="W_imag_" + str(self.layer_id) + "_" + str(l))
 

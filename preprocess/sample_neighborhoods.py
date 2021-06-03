@@ -89,7 +89,11 @@ for x in ['train','val','test']:
         num_sample[x]
     )
     dset = f.create_dataset(
-        'pdb_subsets/{}/{}/neighborhoods_equally_sampled_e={}'.format(name,x,num_sample[x]),
+        'pdb_subsets/{}/split_{}_{}_{}/{}/neighborhoods_equally_sampled_e={}'.format(name,
+                                                                      args.x_train,
+                                                                      args.x_val,
+                                                                      args.x_test,
+                                                                      x,num_sample[x]),
         data=sample
     )
 

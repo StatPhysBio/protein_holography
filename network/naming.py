@@ -30,7 +30,9 @@ def get_data_id(args):
                      'learnrate','hdim',
                      'nlayers','eVal',
                      'scale','load',
-                     'netL'] 
+                     'netL','dropout_rate',
+                     'n_dense','reg_strength'
+] 
     return get_id_from_params(args,ignore_params)
 
 def get_val_data_id(args):
@@ -41,7 +43,10 @@ def get_val_data_id(args):
                      'learnrate','hdim',
                      'nlayers','eVal',
                      'scale','load',
-                     'netL'] 
+                     'netL','dropout_rate',
+                     'netL','dropout_rate',
+                     'n_dense','reg_strength'
+] 
     return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
