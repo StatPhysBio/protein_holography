@@ -17,6 +17,10 @@ from argparse import ArgumentParser
 import naming
 import math
 import keras.backend as K
+import h5py
+import sys
+#sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
+#from posterity import get_metadata,record_metadata
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -154,8 +158,17 @@ parser.add_argument('--n_dense',
                     nargs='+',
                     default=None,
                     help='number of dense layers to put at end of network')
+parser.add_argument('--optimizer',
+                    dest='opt',
+                    type=str,
+                    nargs='+',
+                    default=['Adam'],
+                    help='Optimizer to use')
 
 args =  parser.parse_args()
+    
+# get metadata
+#metadata = get_metadata()
 
 # compile id tags for the data and the network to be trained
 train_data_id = naming.get_data_id(args)
@@ -207,8 +220,13 @@ def confidence(truth,pred):
     return tf.math.reduce_max(tf.nn.softmax(pred))
     
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
-#optimizer = tf.keras.optimizers.SGD(learning_rate=args.learnrate[0])
+optimizers = ['Adam','SGD']
+if args.opt[0] not in optimizers:
+    print(args.opt[0],' optimizer given not recognized')
+if args.opt[0] == 'Adam':
+    optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
+if args.opt[0] == 'SGD':
+    optimizer = tf.keras.optimizers.SGD(learning_rate=args.learnrate[0])
 
 
 network.compile(optimizer=optimizer,
@@ -274,52 +292,46 @@ network.compile(optimizer=optimizer,
                 metrics =['categorical_accuracy',
                           norm_grad,
                           confidence])
-
+total_history = None
 try:
     try:
         print('not loading')
 #        network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
-    # epoch_counter = 0
-    # fails = 0
-    # stepsize = 50
-    # maxLR = 10*args.learnrate[0]
-    # optLR = args.learnrate[0]
-    while bs <= 3000:
+
+    while bs <= 100:
         # batch training set according to new batch size
         ds_train_trunc = ds_train.batch(bs)
 
         # stop after 3 epochs without decrease in loss
         early_stopping = tf.keras.callbacks.EarlyStopping(
             monitor='val_loss', patience=3, mode='min', min_delta=0.01)
-        # cycle = np.floor(1 + epoch_counter / (2 * stepsize))
-        # x = np.abs(epoch_counter/stepsize - 2 * cycle + 1)
-        # curr_lr = optLR + (maxLR - optLR) * np.maximum(0, 1-x)
-        # K.set_value(network.optimizer.learning_rate, curr_lr)
-        # print('learnrate set to {}'.format(curr_lr))
+
         # # train network with new batch size
-        history = network.fit(ds_train_trunc, epochs=100, shuffle=True,
+        try:
+            history = network.fit(ds_train_trunc, epochs=10, shuffle=True,
                               validation_data=ds_val_trunc, 
                               verbose = args.verbosity,
                               callbacks=[model_checkpoint_callback,
                                          early_stopping])
+        except KeyboardInterrupt:
+            print('Training interrupted...continuing')
+        if total_history == None:
+            total_history = history.history
+        else:
+            for k in total_history.keys():
+                total_history[k] = total_history[k] + history.history[k]
+        new_bs = bs*2
+        print('Increasing batch size from {} to {}'.format(bs,new_bs))
+        bs = new_bs
 
-        
-#        print(history.history)
-        # if len(history.history['loss']) < 50:
-        #     fails += 1
-        print('Increasing batch size from {} to {}'.format(bs,bs*2))
-#        epoch_counter += 10
-#        if fails > 5:
-        bs = bs*2
-        #fails = 0
 
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-
+print('Total history:',total_history)
 
 try:
 
@@ -331,19 +343,38 @@ try:
         monitor='val_loss', patience=200, mode='min', min_delta=0.0001)
     
     # train network with new batch size
-    history = network.fit(ds_train_trunc, epochs=10000, shuffle=True,
+    history = network.fit(ds_train_trunc, epochs=10, shuffle=True,
                           validation_data=ds_val_trunc, 
                           verbose = args.verbosity,
                           callbacks=[model_checkpoint_callback,
                                      early_stopping])
     print(history.history)
+    for k in total_history.keys():
+        total_history[k] = total_history[k] + history.history[k]
 
 
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-# trainable weights                                                                                                                                                                                                          
+
+with h5py.File('../data/network/casp11_training30.hdf5','r+') as f:
+    for k in total_history.keys():
+        recorded = False
+        run_num = 0
+        while not recorded:
+            try:
+                dset = f.create_dataset(
+                    '/{}/run_{}/{}'.format(network_id,run_num,k),
+                    data=total_history[k]
+                    )
+                #record_metadata(metadata,dset)
+            except:
+                run_num += 1
+                continue
+            recorded = True
+
+# trainable weights
 trainable_weights = network.trainable_weights
 
 with tf.GradientTape() as gt:
@@ -357,7 +388,6 @@ for w,g in zip(trainable_weights,gradients):
     g = g*g
     g = np.sqrt(g)
     print(tf.reduce_mean(g))
-
 
 total_grad = np.mean(np.concatenate([(np.sqrt(x*x)).flatten() for x in gradients]))
 print('Total grad = {}'.format(total_grad))

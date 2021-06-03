@@ -15,7 +15,7 @@ def get_id_from_params(args,ignore_params,network=False):
         if arg in ignore_params:
             continue
         if getattr(args,arg) == None:
-            continue
+           continue
         params[arg] = getattr(args,arg)
     tag = '_'.join(map(
             lambda x: str(x) + '=' + str(
@@ -31,7 +31,8 @@ def get_data_id(args):
                      'nlayers','eVal',
                      'scale','load',
                      'netL','dropout_rate',
-                     'n_dense','reg_strength'
+                     'n_dense','reg_strength',
+                     'opt'
 ] 
     return get_id_from_params(args,ignore_params)
 
@@ -45,7 +46,8 @@ def get_val_data_id(args):
                      'scale','load',
                      'netL','dropout_rate',
                      'netL','dropout_rate',
-                     'n_dense','reg_strength'
+                     'n_dense','reg_strength',
+                     'opt'
 ] 
     return get_id_from_params(val_args,ignore_params)
 

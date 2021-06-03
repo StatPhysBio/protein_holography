@@ -26,7 +26,6 @@ class SphericalBatchNorm(tf.keras.layers.Layer):
 
     @tf.function
     def call(self,input,training=None):
-        tf.print('SNB called with training = {}'.format(training))
         output = {}
         for l in range(self.L_MAX + 1):
             output[l] = 1.*self.layers[l](input[l],training)
