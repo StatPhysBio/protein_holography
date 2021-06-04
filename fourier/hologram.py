@@ -90,6 +90,9 @@ def delta(r,t,p,l):
 def zernike_coeff_lm(r,t,p,n,r_max,l,m):
     # zernike coefficient is zero if n-l odd
     n = int(np.real(n))
+    if n < l:
+        return 0.+0j
+
     if (n-l) % 2 == 1:
         return 0.+0j
 
@@ -115,10 +118,12 @@ def zernike_coeff_lm(r,t,p,n,r_max,l,m):
     y = np.conj(sp.special.sph_harm(m,l,p,t))
     if True in np.isinf(E):
         print('Error: E is inf')
-        print(-(n-1)/2.,
-              (n+l+D)/2.,
-              l+D/2.,
-              np.array(r)/r_max*np.array(r)/r_max)
+        print('E',E)
+        print('n',n,
+              'l',l,
+              'D',D,
+              'r',np.array(r),
+              'rmax',r_max)
 
     # assemble coefficients
     coeffs = A * B * C * E * F * y
