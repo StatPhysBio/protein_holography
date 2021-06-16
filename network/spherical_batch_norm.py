@@ -4,10 +4,10 @@
 
 #
 
-from keras import backend as K
-from keras.engine import InputSpec
-from keras.layers import BatchNormalization
 import tensorflow as tf
+from tensorflow.keras import backend as K
+#from tensorflow.keras.engine import InputSpec
+from tensorflow.keras.layers import BatchNormalization
 import L_batch_norm as lbn
 
 class SphericalBatchNorm(tf.keras.layers.Layer):

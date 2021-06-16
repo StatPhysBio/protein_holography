@@ -16,10 +16,10 @@ import logging
 from argparse import ArgumentParser
 import naming
 import math
-import keras.backend as K
+import tensorflow.keras.backend as K
 import h5py
 import sys
-sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
+sys.path.append('../utils')
 from posterity import get_metadata,record_metadata
 
 
@@ -369,55 +369,25 @@ try:
         monitor='val_loss', patience=200, mode='min', min_delta=0.0001)
     
     # train network with new batch size
-    history = network.fit(ds_train_trunc, epochs=10000, shuffle=True,
+    history = network.fit(ds_train_trunc, epochs=10, shuffle=True,
                           validation_data=ds_val_trunc, 
                           verbose = args.verbosity,
                           callbacks=[model_checkpoint_callback,
                                      tboard_callback,
                                      early_stopping])
     print(history.history)
-    for k in total_history.keys():
-        total_history[k] = total_history[k] + history.history[k]
+    if total_history == None:
+        total_history = history.history
+    else:
+        for k in total_history.keys():
+            total_history[k] = total_history[k] + history.history[k]
+
 
 
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-
-with h5py.File('../data/network/casp11_training30.hdf5','r+') as f:
-    for k in total_history.keys():
-        recorded = False
-        run_num = 0
-        while not recorded:
-            try:
-                dset = f.create_dataset(
-                    '/{}/run_{}/{}'.format(network_id,run_num,k),
-                    data=total_history[k]
-                    )
-                record_metadata(metadata,dset)
-            except:
-                run_num += 1
-                continue
-            recorded = True
-
-# trainable weights
-trainable_weights = network.trainable_weights
-
-with tf.GradientTape() as gt:
-    gt.watch(inputs)
-    outputs = network(inputs,training=False)
-    loss = tf.nn.softmax_cross_entropy_with_logits(labels = y_true,logits = outputs)
-gradients = gt.gradient(loss,trainable_weights)
-
-for w,g in zip(trainable_weights,gradients):
-    print(w.name)
-    g = g*g
-    g = np.sqrt(g)
-    print(tf.reduce_mean(g))
-
-total_grad = np.mean(np.concatenate([(np.sqrt(x*x)).flatten() for x in gradients]))
-print('Total grad = {}'.format(total_grad))
 
 #print(gradients)
 logging.info('Terminating successfully')
