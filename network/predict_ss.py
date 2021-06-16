@@ -10,7 +10,7 @@ import numpy as np
 import hnn
 import os
 import clebsch
-from dataset import get_dataset
+from dataset import get_ss_dataset as get_dataset
 import sys, os
 import logging
 from argparse import ArgumentParser
@@ -136,6 +136,12 @@ parser.add_argument('--load',
                     type=bool,
                     default=False,
                     help='choose to load weights')
+parser.add_argument('--ss',
+                    dest='ss',
+                    nargs='+',
+                    type=bool,
+                    default=False,
+                    help='ss tag')
 
 args =  parser.parse_args()
 
@@ -202,7 +208,7 @@ network.compile(optimizer=optimizer,
 ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 ds_val_trunc = ds_val.batch(2)
 
-network.evaluate(ds_train.batch(1))
+network.evaluate(ds_train.batch(1).take(1))
 network.summary()
 
 #print(network.model())
@@ -240,7 +246,7 @@ try:
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-
+network.evaluate(ds_train.batch(1))
 
 logging.info('Terminating successfully')
 

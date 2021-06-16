@@ -7,7 +7,7 @@
 
 import tensorflow as tf
 import numpy as np
-import hnn
+import hnn_gpu as hnn
 import os
 import clebsch
 from dataset import get_dataset, get_inputs
@@ -17,33 +17,8 @@ from argparse import ArgumentParser
 import naming
 import math
 import keras.backend as K
-import h5py
-import sys
-sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
-from posterity import get_metadata,record_metadata
-
 
 logging.getLogger().setLevel(logging.INFO)
-for gpu in tf.config.experimental.list_physical_devices('GPU'):
-    tf.config.experimental.set_memory_growth(gpu, True)
-# tf.compat.v1.disable_v2_behavior()
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth=True
-# sess = tf.compat.v1.Session(config=config)
-# tf.compat.v1.python.Keras.set_session(sess)
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# print(gpus)
-# if gpus:
-#     # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
-#     try:
-#         tf.config.experimental.set_virtual_device_configuration(gpus[0],
-#                                                                 [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
-#         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-#         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-#     except RuntimeError as e:
-#         # Virtual devices must be set before GPUs have been initialized
-#         print(e)
-# tf.config.experimental.set_memory_growth(gpus[0], True)
 
 # parameters 
 parser = ArgumentParser()
@@ -158,35 +133,8 @@ parser.add_argument('--scale',
                     nargs='+',
                     default=None,
                     help='scale for rescaling inputs')
-parser.add_argument('--dropout',
-                    dest='dropout_rate',
-                    type=float,
-                    nargs='+',
-                    default=None,
-                    help='rate for dropout')
-parser.add_argument('--reg',
-                    dest='reg_strength',
-                    type=float,
-                    nargs='+',
-                    default=None,
-                    help='strength for regularization (typically l1 or l2')
-parser.add_argument('--n_dense',
-                    dest='n_dense',
-                    type=int,
-                    nargs='+',
-                    default=None,
-                    help='number of dense layers to put at end of network')
-parser.add_argument('--optimizer',
-                    dest='opt',
-                    type=str,
-                    nargs='+',
-                    default=['Adam'],
-                    help='Optimizer to use')
 
 args =  parser.parse_args()
-    
-# get metadata
-#metadata = get_metadata()
 
 # compile id tags for the data and the network to be trained
 train_data_id = naming.get_data_id(args)
@@ -224,11 +172,10 @@ logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
     args.netL[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, args.n_dense[0], 
-    args.reg_strength[0], args.dropout_rate[0], args.scale[0])
+    tf_cg_matrices, 1, args.scale[0])
 
 
-tf.function
+@tf.function
 def loss_fn(truth, pred):
     return tf.nn.softmax_cross_entropy_with_logits(
         labels = truth,
@@ -238,13 +185,8 @@ def confidence(truth,pred):
     return tf.math.reduce_max(tf.nn.softmax(pred))
     
 
-optimizers = ['Adam','SGD']
-if args.opt[0] not in optimizers:
-    print(args.opt[0],' optimizer given not recognized')
-if args.opt[0] == 'Adam':
-    optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
-if args.opt[0] == 'SGD':
-    optimizer = tf.keras.optimizers.SGD(learning_rate=args.learnrate[0])
+optimizer = tf.keras.optimizers.Adam(learning_rate=args.learnrate[0])
+#optimizer = tf.keras.optimizers.SGD(learning_rate=args.learnrate[0])
 
 
 network.compile(optimizer=optimizer,
@@ -272,11 +214,6 @@ model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='loss', patience=3, mode='min', min_delta=0.0001)
  
-logs = args.outputdir + 'tb_test'
-
-tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = logs,
-                                                 histogram_freq = 1,
-                                                 profile_batch = '500,520')
 
 # get initial batch size
 bs = args.bsize[0]
@@ -315,49 +252,52 @@ network.compile(optimizer=optimizer,
                 metrics =['categorical_accuracy',
                           norm_grad,
                           confidence])
-total_history = None
+
 try:
     try:
         print('not loading')
 #        network.load_weights(checkpoint_filepath)
     except:
         logging.error("Unable to load weights.")
-
-    while bs <= 0:
+    # epoch_counter = 0
+    # fails = 0
+    # stepsize = 50
+    # maxLR = 10*args.learnrate[0]
+    # optLR = args.learnrate[0]
+    while bs <= 3000:
         # batch training set according to new batch size
         ds_train_trunc = ds_train.batch(bs)
 
         # stop after 3 epochs without decrease in loss
         early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss', patience=3, mode='min', min_delta=0.01)
-
+            monitor='loss', patience=3, mode='min', min_delta=0.0001)
+        # cycle = np.floor(1 + epoch_counter / (2 * stepsize))
+        # x = np.abs(epoch_counter/stepsize - 2 * cycle + 1)
+        # curr_lr = optLR + (maxLR - optLR) * np.maximum(0, 1-x)
+        # K.set_value(network.optimizer.learning_rate, curr_lr)
+        # print('learnrate set to {}'.format(curr_lr))
         # # train network with new batch size
-        try:
-            history = network.fit(ds_train_trunc, epochs=100, shuffle=True,
+        history = network.fit(ds_train_trunc, epochs=20, shuffle=True,
                               validation_data=ds_val_trunc, 
                               verbose = args.verbosity,
                               callbacks=[model_checkpoint_callback,
-                                         tboard_callback,
-                                         early_stopping],
-                              config=run_config
-                              )
-        except KeyboardInterrupt:
-            print('Training interrupted...continuing')
-        if total_history == None:
-            total_history = history.history
-        else:
-            for k in total_history.keys():
-                total_history[k] = total_history[k] + history.history[k]
-        new_bs = bs*2
-        print('Increasing batch size from {} to {}'.format(bs,new_bs))
-        bs = new_bs
+                                         early_stopping])
 
+        
+#        print(history.history)
+        # if len(history.history['loss']) < 50:
+        #     fails += 1
+        print('Increasing batch size from {} to {}'.format(bs,bs*8))
+#        epoch_counter += 10
+#        if fails > 5:
+        bs = bs*8
+        #fails = 0
 
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-print('Total history:',total_history)
+
 
 try:
 
@@ -373,35 +313,15 @@ try:
                           validation_data=ds_val_trunc, 
                           verbose = args.verbosity,
                           callbacks=[model_checkpoint_callback,
-                                     tboard_callback,
                                      early_stopping])
     print(history.history)
-    for k in total_history.keys():
-        total_history[k] = total_history[k] + history.history[k]
 
 
 
 except KeyboardInterrupt:
     logging.warning("KeyboardInterrupt received. Exiting.")
     sys.exit(os.EX_SOFTWARE)
-
-with h5py.File('../data/network/casp11_training30.hdf5','r+') as f:
-    for k in total_history.keys():
-        recorded = False
-        run_num = 0
-        while not recorded:
-            try:
-                dset = f.create_dataset(
-                    '/{}/run_{}/{}'.format(network_id,run_num,k),
-                    data=total_history[k]
-                    )
-                record_metadata(metadata,dset)
-            except:
-                run_num += 1
-                continue
-            recorded = True
-
-# trainable weights
+# trainable weights                                                                                                                                                                                                          
 trainable_weights = network.trainable_weights
 
 with tf.GradientTape() as gt:
@@ -415,6 +335,7 @@ for w,g in zip(trainable_weights,gradients):
     g = g*g
     g = np.sqrt(g)
     print(tf.reduce_mean(g))
+
 
 total_grad = np.mean(np.concatenate([(np.sqrt(x*x)).flatten() for x in gradients]))
 print('Total grad = {}'.format(total_grad))
