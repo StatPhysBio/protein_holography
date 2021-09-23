@@ -14,12 +14,12 @@ from Bio.PDB.mmtf import MMTFParser
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 import h5py
 
-def load_data(nb):
+def load_data(pdb):
 
     try:
-        name = nb[1].decode('utf-8')
+        name = pdb.decode('utf-8')
     except:
-        print('Problematic namne ',nb[1])
+        print('Problematic namne ',pdb[1])
     parser = PDBParser(QUIET=True)
 
     try:
@@ -32,34 +32,27 @@ def load_data(nb):
     return exists
 
 
-def process_data(nb):
+def process_data(pdb):
     assert(process_data.callback)
-
+    
     parser = MMTFParser()
-    name = nb[1].decode('utf-8')
+    try:
+        name = pdb.decode('utf-8')
+    except Exception as e:
+        print(e,pdb)
     try:
         with warnings.catch_warnings(): 
             warnings.simplefilter('ignore', PDBConstructionWarning)
             struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
-    except:
-        print(nb)
-        print('failed')
+    except Exception as e: 
+        print(e)
+        print(pdb)
+#    except:
+#        print(pdb)
+#        print('failed')
         return False
-    try:
-        res = struct[int(nb[2].decode('utf-8'))][nb[3].decode('utf-8')][int(nb[5].decode('utf-8'))]
-    except:
-        try:
-            res = struct[int(nb[2].decode('utf-8'))][nb[3].decode('utf-8')][(nb[4].decode('utf-8'),
-                                                                             int(nb[5].decode('utf-8')),
-                                                                             nb[6].decode('utf-8'))
-                                                                        ]
-        except:
-            print('Access error: Could not access residue in pdb with full id')
-            print(struct,int(nb[2].decode('utf-8')),nb[3].decode('utf-8'),(nb[4].decode('utf-8'),
-                                                                             int(nb[5].decode('utf-8')),
-                                                                             nb[6].decode('utf-8'))
-                                                                        )
-    return process_data.callback(struct, res, **process_data.params)
+    
+    return process_data.callback(struct, **process_data.params)
 
 def initializer(init, callback, params, init_params):
     if init is not None:
@@ -71,23 +64,10 @@ def initializer(init, callback, params, init_params):
 
 class PDBPreprocessor:
     def __init__(self, hdf5_file, nh_list):
-#    def __init__(self, path):
-        #df = pd.read_table(path, header=None, names=["aa", "neighborhood", "extra"])
+
         with h5py.File(hdf5_file,'r') as f:
             nh_list = np.array(f[nh_list])
         self.__data = nh_list
-#        self.__data = pd.Series(nh_list,
-#                                index=['aa',
-#                                       'pdb',
-#                                       'model',
-#                                       'chain',
-#                                       'hetero',
-#                                       'seq id',
-#                                       'insertion']
-#                            )
-
-        #print(df)
-        #self.__data = df['neighborhood'].apply(lambda x: eval(x))
 
     def count(self):
         return self.__data.shape[0]
@@ -99,10 +79,8 @@ class PDBPreprocessor:
             data = self.__data[:limit]
         with Pool(initializer = initializer, processes=parallelism, initargs = (init, callback, params, init_params)) as pool:
 
-            #all_loaded = functools.reduce(lambda x, y: x and y, pool.imap(load_data, data))
             all_loaded = True
             if all_loaded:
-                # logging.info('All PDB files are loaded.')
                 pass
             else:
                 raise Exception("Some PDB files could not be loaded.")

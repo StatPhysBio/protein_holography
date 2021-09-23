@@ -30,7 +30,7 @@ def get_data_id(args):
                      'nlayers','eVal',
                      'dataset','invariants',
                      'parallelism','easy',
-                     'output','hdf5'] 
+                     'output','hdf5','input'] 
     return get_id_from_params(args,ignore_params)
 
 def get_val_data_id(args):

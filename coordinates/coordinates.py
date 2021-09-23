@@ -84,7 +84,7 @@ def get_res_atomic_coords(res,COA=False,ignore_alpha=True):
 
 # returns the spherical coordinates of the atoms of the amino acids that at
 # least partially lie within the distance d to the residues alpha Carbon
-def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True):
+def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
 
     # first find the neighboring atoms
     ca_coord = res['CA'].get_coord()
@@ -97,4 +97,4 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True):
     if remove_center:
         neighbor_atoms = [x for x in neighbor_atoms if x.get_parent() != res]
     # get atomic coords from neighboring atoms
-    return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.el_to_ind)
+    return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.el_to_ind,COA=COA)

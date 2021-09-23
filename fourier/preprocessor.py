@@ -43,14 +43,15 @@ def process_data(nb):
           int(nb[5].decode('utf-8')),
           nb[6].decode('utf-8')))
     try:
-        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp11_training30.hdf5',
+        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp11_training30_val_complete.hdf5',
                        'r') as f:
             C_coords = np.array(f["{}/{}/{}/C".format(name,nh,10.)])
             N_coords = np.array(f["{}/{}/{}/N".format(name,nh,10.)])
             O_coords = np.array(f["{}/{}/{}/O".format(name,nh,10.)])
             S_coords = np.array(f["{}/{}/{}/S".format(name,nh,10.)])
-        #struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
-    except:
+
+    except Exception as e:
+        print(e)
         print(nb)
         print('failed')
         return False
@@ -73,7 +74,8 @@ class HDF5Preprocessor:
 #    def __init__(self, path):
         #df = pd.read_table(path, header=None, names=["aa", "neighborhood", "extra"])
         with h5py.File(hdf5_file,'r') as f:
-            nh_list = np.array(f[nh_list])
+            nh_list = np.unique(np.array(f[nh_list]),axis=0)
+            print(nh_list)
         self.__data = nh_list
         self.coord_file = coord_file
 #        self.__data = pd.Series(nh_list,
@@ -106,7 +108,7 @@ class HDF5Preprocessor:
                 pass
             else:
                 raise Exception("Some PDB files could not be loaded.")
-
+            
             for coords in pool.imap(process_data, data):
                 if coords:
                     yield coords

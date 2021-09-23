@@ -10,7 +10,7 @@
 #  - "easy" flag to include central res
 #
 
-from preprocessor import HDF5Preprocessor
+from preprocessor2 import HDF5Preprocessor
 import pandas as pd
 import numpy as np
 import logging
@@ -27,7 +27,7 @@ import protein
 import hologram as hgm
 import naming
 
-def c(coords,nb,ks,proj,l,rmax):
+def c(coords, nb,ks,proj,l,rmax):
     EL_CHANNEL_NUM = 4
     # turn coordinates into coefficients
 
@@ -38,33 +38,25 @@ def c(coords,nb,ks,proj,l,rmax):
     # list of the dicts for each channel for current res
     channel_dicts = []
 
-    for k in ks:
-        for curr_ch in range(EL_CHANNEL_NUM):
-            curr_channel_coeffs = {}
+    with h5py.File('/gscratch/spe/mpun/protein_holography/data/fourier/casp11_training30_train_complete.hdf5',
+                   'r') as f:
+        name = nb[1].decode('utf-8')
+        nh = (int(nb[2].decode('utf-8')),
+              nb[3].decode('utf-8'),
+              (nb[4].decode('utf-8'),
+               int(nb[5].decode('utf-8')),
+               nb[6].decode('utf-8')
+              )
+        )
+        nh_name = "{}/{}/{}/".format(name,nh,10.)
+#        print(nh_name+'{}'.format(0))
+        try:
             for l in range(l + 1):
-                # if the current channel has no signal then append zero holographic signal
-                if len(coords[curr_ch][0]) == 0:
-                    curr_channel_coeffs[l] = np.array([0.]*(2*l+1))
-                    continue
-                if proj == 'hgram':
-                    curr_channel_coeffs[l] = hgm.hologram_coeff_l(coords[curr_ch][0],
-                                                                  coords[curr_ch][1],
-                                                                  coords[curr_ch][2],
-                                                                  rH, k, l)
-
-                if proj == 'zgram':
-                    curr_channel_coeffs[l] = hgm.zernike_coeff_l(coords[curr_ch][0],
-                                                                 coords[curr_ch][1],
-                                                                 coords[curr_ch][2],
-                                                                 k, rmax, l)
- #           print(curr_channel_coeffs[0].shape)
-            channel_dicts.append(curr_channel_coeffs)
-
-    # coefficients gathered for every channel for this sample residue
-    # channels_dicts currently has the structure n_c x l x m
-    # we can now swap n_c and l
-    for l in range(l + 1):
-        curr_coeffs.append(np.stack([x[l] for x in channel_dicts]))
+                curr_coeffs.append(np.array(f[nh_name+'{}'.format(l)]))
+        except Exception as E:
+            print(E)
+            print(nh_name)
+            curr_coeffs = None
 #    print(curr_coeffs)
 
     return (curr_coeffs,nb)
@@ -77,7 +69,6 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', dest='dataset', type=str, help='dataset file name', required=True)
     parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
     parser.add_argument('-d', dest='d', type=float, help='radius', default=5.0,nargs='+')
-    parser.add_argument('--ch', dest='ch', type=str, help='channel name',nargs='+')
     parser.add_argument('--easy', action='store_true', help='easy', default=False)
     parser.add_argument('--hdf5', dest='hdf5', type=str, help='hdf5 filename', default=False)
     parser.add_argument('-k', dest='k', type=complex, nargs='+')
@@ -113,24 +104,25 @@ if __name__ == "__main__":
             )
             nh_name = "{}/{}/{}/".format(name,nh,10.)
 
-            with h5py.File('/gscratch/spe/mpun/protein_holography/data/fourier/{}'.format(args.output),'r+') as f:
-#            with h5py.File('/gscratch/stf/mpun/data/{}'.format(args.output),'r+') as f:
+            if proj == None:
+                p = 1
+            else:
                 a.append(proj)
                 zer = np.zeros(20)
                 zer[protein.aa_to_ind[nb[0].decode('utf-8')]] = 1.
                 hgm_labels.append(zer)
-                for l in range(args.l[0] + 1):
+                # for l in range(args.l[0] + 1):
 
-                    #    print(proj[l])
+                #     #    print(proj[l])
                     
-                    try:
+                #     try:
 
-                        dset = f.create_dataset(nh_name+'{}'.format(l),
-                                                data = proj[l]
-                                            )
-                        record_metadata(metadata,dset)
-                    except:
-                        print("Unexpected error:", sys.exc_info()[0])
+                #         dset = f.create_dataset(nh_name+'{}'.format(l),
+                #                                 data = proj[l]
+                #                             )
+                #         record_metadata(metadata,dset)
+                #     except:
+                #         print("Unexpected error:", sys.exc_info()[0])
                     
                     
                     #o.write(str(n) + ',' + res + ',' + str(fid)+ ',' + str(i) +',{},{},{}'.format(invs[0][i][j],invs[1][i][j],invs[2][i][j]) + '\n')
@@ -144,7 +136,8 @@ if __name__ == "__main__":
     hgm_coeffs = {}
     hgm_coeffs_real = {}
     hgm_coeffs_imag = {}
-
+    print(len(a))
+#    print(a)
     for l in range(args.l[0]+1):
         hgm_coeffs[l] = np.stack([x[l] for x in a]).astype('complex64')
 

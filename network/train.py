@@ -16,7 +16,7 @@ import logging
 from argparse import ArgumentParser
 import naming
 import math
-import keras.backend as K
+import tensorflow.keras.backend as K
 import h5py
 import sys
 sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
@@ -24,26 +24,10 @@ from posterity import get_metadata,record_metadata
 
 
 logging.getLogger().setLevel(logging.INFO)
-for gpu in tf.config.experimental.list_physical_devices('GPU'):
-    tf.config.experimental.set_memory_growth(gpu, True)
-# tf.compat.v1.disable_v2_behavior()
-# config = tf.compat.v1.ConfigProto()
-# config.gpu_options.allow_growth=True
-# sess = tf.compat.v1.Session(config=config)
-# tf.compat.v1.python.Keras.set_session(sess)
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# print(gpus)
-# if gpus:
-#     # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
-#     try:
-#         tf.config.experimental.set_virtual_device_configuration(gpus[0],
-#                                                                 [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
-#         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-#         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-#     except RuntimeError as e:
-#         # Virtual devices must be set before GPUs have been initialized
-#         print(e)
-# tf.config.experimental.set_memory_growth(gpus[0], True)
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    for gpu in gpus:
+        tf.config.experimental.set_virtual_device_configuration(gpu,[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=8000)])
 
 # parameters 
 parser = ArgumentParser()

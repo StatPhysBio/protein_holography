@@ -3,9 +3,9 @@
 # batch norm of a given L
 #
 
-from keras import backend as K
-from keras.engine import InputSpec
-from keras.layers import BatchNormalization
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import InputSpec
+from tensorflow.keras.layers import BatchNormalization
 
 import tensorflow as tf
 

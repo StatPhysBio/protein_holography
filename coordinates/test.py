@@ -29,25 +29,26 @@ import protein
 
 def c(struct, res, d, easy, COA=False):
 
-    EL_CHANNEL_NUM = 4
-    DIMENSION = 3
-    ca_coord = res['CA'].get_coord()
-    model_tag = res.get_full_id()[1]
-    model = struct[model_tag]
+    # EL_CHANNEL_NUM = 4
+    # DIMENSION = 3
+    # ca_coord = res['CA'].get_coord()
+    # model_tag = res.get_full_id()[1]
+    # model = struct[model_tag]
 
-    if easy:
-        curr_coords = co.get_res_atomic_coords(res,COA=COA,ignore_alpha=False)
-    else:
-        curr_coords = [[[] for i in range(EL_CHANNEL_NUM)] for j in range(DIMENSION)]
-    if d > 0:
-        neighbor_coords = co.get_res_neighbor_atomic_coords(res,d,struct)
+    # if easy:
+    #     curr_coords = co.get_res_atomic_coords(res,COA=COA,ignore_alpha=False)
+    # else:
+    #     curr_coords = [[[] for i in range(EL_CHANNEL_NUM)] for j in range(DIMENSION)]
+    # if d > 0:
+    #     neighbor_coords = co.get_res_neighbor_atomic_coords(res,d,struct)
 
-        for i in range(DIMENSION):
-            for j in range(EL_CHANNEL_NUM):
-                curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
+    #     for i in range(DIMENSION):
+    #         for j in range(EL_CHANNEL_NUM):
+    #             curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
 
 
-    curr_r,curr_t,curr_p = curr_coords
+    # curr_r,curr_t,curr_p = curr_coords
+    curr_coords = 0.
     full_id = res.get_full_id()
 
     return res.get_resname(), full_id, curr_coords

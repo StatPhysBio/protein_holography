@@ -91,13 +91,12 @@ def zernike_coeff_lm(r,t,p,n,r_max,l,m):
     # zernike coefficient is zero if n-l odd
     n = int(np.real(n))
     if n < l:
-        zeros = np.sum(np.zeros(shape=r.shape,dtype=complex),axis=-1)
-        return zeros
+        zeros = np.zeros(shape=r.shape,dtype=complex)
+        return 0. + 0j
 
     if (n-l) % 2 == 1:
-        zeros = np.sum(np.zeros(shape=r.shape,dtype=complex),axis=-1)
-        return zeros
-
+        zeros = np.zeros(shape=r.shape,dtype=complex)
+        return 0.+0j
 
     # check input dimensions of arrays
     if (np.array(r).shape != np.array(t).shape or
