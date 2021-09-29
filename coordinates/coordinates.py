@@ -10,6 +10,9 @@ import protein
 from geo import cartesian_to_spherical
 import Bio.PDB as pdb
 
+# six channels for C,N,O,S,HOH,SASA
+EL_CHANNEL_NUM = 6
+
 
 def atomic_spherical_coord(atom, origin, COA=False, axes=None):
     """
@@ -67,6 +70,7 @@ def get_coords(atom_list,origin,ch_func,ch_num,ch_dict,COA=False,res=None):
     Returns:
 
     """
+
     # set up hologram structure
     r = [[] for i in range(ch_num)]
     t = [[] for i in range(ch_num)]
@@ -80,30 +84,51 @@ def get_coords(atom_list,origin,ch_func,ch_num,ch_dict,COA=False,res=None):
     
     for atom in atom_list:
         
-        curr_ch = ch_func(atom)
-
-        if curr_ch not in ch_to_ind.keys():
-            continue
-        ch_ind = ch_to_ind[curr_ch]
-        if curr_ch not in ch_keys:
-            continue
-            
+        atom_channels = ch_func(atom)
         r_mag,curr_t,curr_p = atomic_spherical_coord(atom,origin,COA,axes)
         if r_mag == None:
             continue
-        # append spherical coords of current atom to
-        # the overall lists
-        r[ch_ind].append(r_mag)
-        t[ch_ind].append(curr_t)
-        p[ch_ind].append(curr_p)
+
+        for curr_ch in atom_channels:
+            if curr_ch not in ch_to_ind.keys():
+                continue
+            ch_ind = ch_to_ind[curr_ch]
+            if curr_ch not in ch_keys:
+                continue
+            
+
+            r[ch_ind].append(r_mag)
+            t[ch_ind].append(curr_t)
+            p[ch_ind].append(curr_p)
 
     return r,t,p
 
 def el_channel(atom):
-    
-    return atom.element
+    """
+    Get channel associated with a given atom
 
-EL_CHANNEL_NUM = 4
+    Each atom should contribute to the channel associated with its element.
+    Furthermore water Oxygens belong to their own channel and all atoms except water
+    atoms contribute to the SASA channel.
+
+    Parameters:
+      atom (pdb.Atom): Atom to determine the channel type for
+
+    Returns:
+      List of channels associated with that coordinate
+    """
+
+    channels = []
+
+    if atom.get_parent().get_resname() == 'HOH':
+        channels.append('HOH')
+    else:
+        channels.append(atom.element)
+        channels.append('SASA')
+
+    return channels
+
+
 
 # get atomic coordinates of a residue and return them in format of r,t,p each of which
 # is 4 x N_e where N_e is the number of times that the element e appears in the residue
