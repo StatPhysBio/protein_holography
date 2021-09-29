@@ -43,21 +43,25 @@ def process_data(nb):
           int(nb[5].decode('utf-8')),
           nb[6].decode('utf-8')))
     try:
-        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp11_training30_val_complete.hdf5',
+        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/1PGA_SASA.hdf5',
                        'r') as f:
             C_coords = np.array(f["{}/{}/{}/C".format(name,nh,10.)])
             N_coords = np.array(f["{}/{}/{}/N".format(name,nh,10.)])
             O_coords = np.array(f["{}/{}/{}/O".format(name,nh,10.)])
             S_coords = np.array(f["{}/{}/{}/S".format(name,nh,10.)])
-
+            HOH_coords = np.array(f["{}/{}/{}/HOH".format(name,nh,10.)])
+            SASA_coords = np.array(f["{}/{}/{}/SASA".format(name,nh,10.)])
+            weights = np.array(f["{}/{}/{}/SASA_weights".format(name,nh,10.)])
+            
     except Exception as e:
         print(e)
         print(nb)
         print('failed')
         return False
-    coords = [C_coords,O_coords,N_coords,S_coords]
+    coords = [C_coords,O_coords,N_coords,S_coords,HOH_coords,SASA_coords]
 
-    return process_data.callback(coords, nb, **process_data.params)
+
+    return process_data.callback(coords, weights, nb, **process_data.params)
 
 
 

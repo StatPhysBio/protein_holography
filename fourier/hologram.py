@@ -87,7 +87,7 @@ def delta(r,t,p,l):
 
 # Inputs r,t,p in the shapes (ch X n) and give coefficients
 # in output shape (ch)
-def zernike_coeff_lm(r,t,p,n,r_max,l,m):
+def zernike_coeff_lm(r,t,p,n,r_max,l,m,weights):
     # zernike coefficient is zero if n-l odd
     n = int(np.real(n))
     if n < l:
@@ -130,12 +130,15 @@ def zernike_coeff_lm(r,t,p,n,r_max,l,m):
     # assemble coefficients
     coeffs = A * B * C * E * F * y
 
-    return np.sum(coeffs,axis=-1)
+    return np.sum(weights*coeffs,axis=-1)
     
 # Inputs r,t,p in the shapes (ch X n) and give coefficients
 # in output shape (ch) 
-def zernike_coeff_l(r,t,p,n,r_max,l):
-
+def zernike_coeff_l(r,t,p,n,r_max,l,weights=None):
+    if weights is None:
+        weights = np.ones(shape=r.shape[-1])
+    else:
+        print('nonzero weights')
     if (np.array(r).shape != np.array(t).shape or
         np.array(p).shape != np.array(t).shape):
         print('Error: input arrays do not have same shape')
@@ -143,7 +146,7 @@ def zernike_coeff_l(r,t,p,n,r_max,l):
 
     fourier_coeff_l = []
     for m in range(0,2*l+1):
-        fourier_coeff_l.append(zernike_coeff_lm(r,t,p,n,r_max,l,m-l))
+        fourier_coeff_l.append(zernike_coeff_lm(r,t,p,n,r_max,l,m-l,weights))
     return np.array(fourier_coeff_l)
 
 

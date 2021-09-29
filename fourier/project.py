@@ -27,12 +27,10 @@ import protein
 import hologram as hgm
 import naming
 
-def c(coords,nb,ks,proj,l,rmax):
-    EL_CHANNEL_NUM = 4
+def c(coords,weights,nb,ks,proj,l,rmax):
+    EL_CHANNEL_NUM = len(coords)
     # turn coordinates into coefficients
-
-#    print(coords[0].shape)
-
+    print(EL_CHANNEL_NUM)
     # to be used once coefficients are gathered for all channels for current res
     curr_coeffs = []
     # list of the dicts for each channel for current res
@@ -40,6 +38,10 @@ def c(coords,nb,ks,proj,l,rmax):
 
     for k in ks:
         for curr_ch in range(EL_CHANNEL_NUM):
+            if curr_ch == 5:
+                curr_weights = weights
+            else:
+                curr_weights = None
             curr_channel_coeffs = {}
             for l in range(l + 1):
                 # if the current channel has no signal then append zero holographic signal
@@ -56,7 +58,9 @@ def c(coords,nb,ks,proj,l,rmax):
                     curr_channel_coeffs[l] = hgm.zernike_coeff_l(coords[curr_ch][0],
                                                                  coords[curr_ch][1],
                                                                  coords[curr_ch][2],
-                                                                 k, rmax, l)
+                                                                 k, rmax, l,
+                                                                 weights=curr_weights
+                    )
  #           print(curr_channel_coeffs[0].shape)
             channel_dicts.append(curr_channel_coeffs)
 
@@ -98,6 +102,7 @@ if __name__ == "__main__":
     hgm_labels = []
     a = []
     n = 0
+    data_ids = []
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         for proj,nb in ds.execute(
                 c, limit = None, params = {'ks': args.k, 'proj': args.proj[0], 'l': args.l[0],
@@ -112,25 +117,25 @@ if __name__ == "__main__":
                )
             )
             nh_name = "{}/{}/{}/".format(name,nh,10.)
-
+            data_ids.append(nb)
             with h5py.File('/gscratch/spe/mpun/protein_holography/data/fourier/{}'.format(args.output),'r+') as f:
 #            with h5py.File('/gscratch/stf/mpun/data/{}'.format(args.output),'r+') as f:
                 a.append(proj)
                 zer = np.zeros(20)
                 zer[protein.aa_to_ind[nb[0].decode('utf-8')]] = 1.
                 hgm_labels.append(zer)
-                for l in range(args.l[0] + 1):
+                # for l in range(args.l[0] + 1):
 
-                    #    print(proj[l])
+                #     #    print(proj[l])
                     
-                    try:
+                #     try:
 
-                        dset = f.create_dataset(nh_name+'{}'.format(l),
-                                                data = proj[l]
-                                            )
-                        record_metadata(metadata,dset)
-                    except:
-                        print("Unexpected error:", sys.exc_info()[0])
+                #         dset = f.create_dataset(nh_name+'{}'.format(l),
+                #                                 data = proj[l]
+                #                             )
+                #         record_metadata(metadata,dset)
+                #     except:
+                #         print("Unexpected error:", sys.exc_info()[0])
                     
                     
                     #o.write(str(n) + ',' + res + ',' + str(fid)+ ',' + str(i) +',{},{},{}'.format(invs[0][i][j],invs[1][i][j],invs[2][i][j]) + '\n')
@@ -151,5 +156,6 @@ if __name__ == "__main__":
     for k in hgm_coeffs.keys():
         print('key ',k)
         print(hgm_coeffs[k].shape)
-    np.save('../data/zgram/' + data_id,hgm_coeffs)
-    np.save('../data/zgram/labels_'+data_id,hgm_labels)
+    np.save('/gscratch/spe/mpun/protein_holography/data/zgram/' + data_id,hgm_coeffs)
+    np.save('/gscratch/spe/mpun/protein_holography/data/zgram/labels_'+data_id,hgm_labels)
+    np.save('/gscratch/spe/mpun/protein_holography/data/zgram/data_ids_'+data_id,np.array(data_ids))
