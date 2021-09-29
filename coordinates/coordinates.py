@@ -2,17 +2,35 @@
 # File to take coordinates from list of neighborhoods
 #
 
+
+
 import COA_ref_frame as COA_calc
 import numpy as np
 import protein
 from geo import cartesian_to_spherical
 import Bio.PDB as pdb
 
-# get spherical coordinates of an atom given an origin
+
 def atomic_spherical_coord(atom, origin, COA=False, axes=None):
-        
+    """
+    Get spherical coordinates of an atom with respect to an origin
+
+    This function takes an pdb.Atom type and returns the spherical coordinates of 
+    the atom with respect to the origin.
+
+    Parameters:
+      atom (pdb.Atom): Atom to take coordinates of.
+      origin (array): Cartesian coordinates of the origin
+      COA (bool): if true use axes to determine xyz axes
+      axes (array): xyz vectors of desired coordinate system in the pdb 
+         defined reference frame
+    
+    Returns:
+      An array of r, theta, and phi coordinates. 
+    """
+    
     # get cartesian coords of current atom in the
-    # pdb chosen coord-system
+    # pdb chosen coordinate system
     curr_r = atom.get_coord() - origin
     if COA:
         curr_r = np.einsum('ij,j->i',axes,curr_r)
@@ -21,7 +39,8 @@ def atomic_spherical_coord(atom, origin, COA=False, axes=None):
     # located at the origin
     if np.sum(np.abs(curr_r)) == 0:
         print(atom.get_parent().get_full_id())
-        print('Error: Atom lies at the origin. Coordinates will vause singularity for hologram projections')
+        print('Error: Atom lies at the origin. Coordinates will cause singularity '
+              'for hologram projections')
         return (None,None,None)
     # convert cartesian coords to spherical
     r_mag,theta,phi = cartesian_to_spherical(curr_r)
@@ -31,7 +50,23 @@ def atomic_spherical_coord(atom, origin, COA=False, axes=None):
 # get atomic coordinates of a residue and return them in format of r,t,p each of which
 # is 4 x N_e where N_e is the number of times that the element e appears in the residue
 def get_coords(atom_list,origin,ch_func,ch_num,ch_dict,COA=False,res=None):
-    
+    """
+    Gets spherical coordinates of a list of atoms
+
+    This function takes a list of pdb.Atom types and outputs a tuple of arrays
+    of coordinates. The output is of shape 4xN_c where N_c is the number of atoms
+    associated with the given channel
+
+    Parameters:
+      atom_list (list): list of pdb.Atom types for which to gather the coordinates
+      origin (array): coordinates for the coordinate system origin
+      ch_func (function): function to determine the channel of a given coordinate
+      ch_num (int): total numer of channels
+      COA (bool): if true xyz axes are aligned with the COA bonds
+      res : unsure of this parameter's use
+    Returns:
+
+    """
     # set up hologram structure
     r = [[] for i in range(ch_num)]
     t = [[] for i in range(ch_num)]
@@ -65,6 +100,7 @@ def get_coords(atom_list,origin,ch_func,ch_num,ch_dict,COA=False,res=None):
     return r,t,p
 
 def el_channel(atom):
+    
     return atom.element
 
 EL_CHANNEL_NUM = 4
@@ -72,7 +108,24 @@ EL_CHANNEL_NUM = 4
 # get atomic coordinates of a residue and return them in format of r,t,p each of which
 # is 4 x N_e where N_e is the number of times that the element e appears in the residue
 def get_res_atomic_coords(res,COA=False,ignore_alpha=True):
+    """
+    Gets spherical coordinates of atoms associated with a residue
 
+    This function get spherical coordinates of a residue and return them in format of 
+    r,t,p each of which is 4 x N_e where N_e is the number of times that the element
+    e appears in the residue
+
+    Parameters:
+      res (pdb.Residue): residue to get coordinates for
+      COA (bool): if true then xyz axes are aligned with COA bonds
+      ignore_alpha (bool): if true then alpha Carbon is ignored (generally used if  
+        coordinates will be used in fourier projection to avoid singularity at zero)
+
+    Returns:
+    
+    """
+
+    
     ca_coord = res['CA'].get_coord()
     if ignore_alpha:
         atom_list = [x for x in res if x.get_name() != 'CA']
@@ -82,19 +135,42 @@ def get_res_atomic_coords(res,COA=False,ignore_alpha=True):
 
 
 
-# returns the spherical coordinates of the atoms of the amino acids that at
-# least partially lie within the distance d to the residues alpha Carbon
 def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
+    """
+    Gets spherical coordinates of atoms within a neighborhood
 
-    # first find the neighboring atoms
-    ca_coord = res['CA'].get_coord()
+    This function returns the spherical coordinates of the atoms of the amino 
+    acids that at least partially lie within the distance d to the residues alpha Carbon
+
+    Parameters:
+      res (pdb.Residue): central residue
+      d (float): radius of the neighborhood
+      struct (pdb.Structure): pdb structure that the central residue belongs to
+      remove_center (bool): if true central residue coordinates will not be 
+            included in returned coordinates
+      COA (bool): if true the xyz axes will be given by the COA bonds
     
+    Returns:
+    
+    """
+
+    # get central coord of the nieghborhood
+    ca_coord = res['CA'].get_coord()
+
+    # set up neighborsearch to search the same model
+    # within the pdb file
     model_tag = res.get_full_id()[1]
     model = struct[model_tag]
     atom_list = pdb.Selection.unfold_entities(model,'A')
     ns = pdb.NeighborSearch(atom_list)
+
+    # perform neighborsearch on atoms within the radius d
     neighbor_atoms = ns.search(ca_coord,d)
+
+
     if remove_center:
+        # remove atoms associated belonging to the central residue
         neighbor_atoms = [x for x in neighbor_atoms if x.get_parent() != res]
+
     # get atomic coords from neighboring atoms
     return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.el_to_ind,COA=COA)
