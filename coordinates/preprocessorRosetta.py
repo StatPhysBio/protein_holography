@@ -13,6 +13,13 @@ from Bio.PDB import PDBParser
 from Bio.PDB.mmtf import MMTFParser
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 import h5py
+import sys
+sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
+import pyrosetta
+from pyrosetta.rosetta import core, protocols, numeric, basic, utility
+
+init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -ignore_zero_occupancy false'
+pyrosetta.init(init_flags)
 
 def load_data(nb):
 
@@ -32,45 +39,21 @@ def load_data(nb):
     return exists
 
 
-def process_data(nb):
+def process_data(nb_list):
     assert(process_data.callback)
 
-    #parser = MMTFParser()
-    parser =  PDBParser()
-    name = nb[1].decode('utf-8')
+    pdb = nb_list[0][1].decode('utf-8')
+    print(nb_list[0][1])
+    
+    #pdb_file = '/gscratch/stf/mpun/data/' + pdb + '.pdb'
+    #pdb_file = '/gscratch/stf/mpun/data/TCRStructure/pdbs/' + pdb + '.pdb'
+    pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/validation/' + pdb + '.pdb'
     try:
-        with warnings.catch_warnings(): 
-            warnings.simplefilter('ignore', PDBConstructionWarning)
-            #struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
-            struct = parser.get_structure('{}'.format(name),
-                                          '/gscratch/stf/mpun/data/casp12/pdbs/training_30/{}.pdb'.format(name))
-#                                          '/gscratch/stf/mpun/data/casp12/{}.pdb'.format(name))
-#                                          '/gscratch/stf/mpun/data/{}.pdb'.format(name))
-#                                          '/gscratch/stf/mpun/data/TCRStructure/pdbs/{}.pdb'.format(name))
-    except Exception as e:
-        print(nb)
-        print('failed')
-        print(e)
-        return False
-    try:
-        res = struct[int(nb[2].decode('utf-8'))][nb[3].decode('utf-8')][(nb[4].decode('utf-8'),
-                                                                         int(nb[5].decode('utf-8')),
-                                                                         nb[6].decode('utf-8'))
-        ]
-
+        pose = pyrosetta.pose_from_pdb(pdb_file)
     except:
-        try:
-            res = struct[int(nb[2].decode('utf-8'))][nb[3].decode('utf-8')][(nb[4].decode('utf-8'),
-                                                                             int(nb[5].decode('utf-8')),
-                                                                             nb[6].decode('utf-8'))
-                                                                        ]
-        except:
-            print('Access error: Could not access residue in pdb with full id')
-            print(struct,int(nb[2].decode('utf-8')),nb[3].decode('utf-8'),(nb[4].decode('utf-8'),
-                                                                             int(nb[5].decode('utf-8')),
-                                                                             nb[6].decode('utf-8'))
-                                                                        )
-    return process_data.callback(struct, res, **process_data.params)
+        print('Pose could ot be created for protein {}'.format(pdb))
+        return process_data.callback(nb_list,None,**process_data.params)
+    return process_data.callback(nb_list, pose, **process_data.params)
 
 def initializer(init, callback, params, init_params):
     if init is not None:
@@ -86,7 +69,12 @@ class PDBPreprocessor:
         #df = pd.read_table(path, header=None, names=["aa", "neighborhood", "extra"])
         with h5py.File(hdf5_file,'r') as f:
             nh_list = np.array(f[nh_list])
-        self.__data = nh_list
+        nh_lists = []
+
+        unique_pdbs = np.unique(nh_list[:,1])
+        for pdb in unique_pdbs:
+            nh_lists.append(nh_list[nh_list[:,1] == pdb])
+        self.__data = nh_lists
 #        self.__data = pd.Series(nh_list,
 #                                index=['aa',
 #                                       'pdb',
@@ -101,7 +89,7 @@ class PDBPreprocessor:
         #self.__data = df['neighborhood'].apply(lambda x: eval(x))
 
     def count(self):
-        return self.__data.shape[0]
+        return len(self.__data)
 
     def execute(self, callback, parallelism = 8, limit = None, params = None, init = None, init_params = None):
         if limit is None:

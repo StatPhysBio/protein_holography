@@ -30,3 +30,22 @@ atoms_per_aa = {'CYS': 6, 'ASP': 8, 'SER': 6, 'GLN': 9, 'LYS': 9,
 
 aas = aa_to_ind.keys()
 els = el_to_ind.keys()
+
+#channel encodings
+ch_to_ind_encoding = {
+    'C':0,
+    'N':1,
+    'O':2,
+    'S':3,
+    'HOH':4,
+    'SASA':5
+}
+
+ind_to_ch_encoding = {
+    0:'C',
+    1:'N',
+    2:'O',
+    3:'S',
+    4:'HOH',
+    5:'SASA'
+}

@@ -9,6 +9,9 @@ import numpy as np
 import protein
 from geo import cartesian_to_spherical
 import Bio.PDB as pdb
+import sys
+sys.path.append('/gscratch/stf/mpun/software/freesasa-python')
+import freesasa
 
 # six channels for C,N,O,S,HOH,SASA
 EL_CHANNEL_NUM = 6
@@ -119,7 +122,7 @@ def el_channel(atom):
     """
 
     channels = []
-
+    #channels.append(atom.element)
     if atom.get_parent().get_resname() == 'HOH':
         channels.append('HOH')
     else:
@@ -176,7 +179,9 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
       COA (bool): if true the xyz axes will be given by the COA bonds
     
     Returns:
-    
+      coords (list): coordinates in the shape (d,C,N_c) where N_c is the number of points associated
+          with channel c
+      SASA_weights (list): a list of the SASAs at each of the protein atoms
     """
 
     # get central coord of the nieghborhood
@@ -187,15 +192,52 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
     model_tag = res.get_full_id()[1]
     model = struct[model_tag]
     atom_list = pdb.Selection.unfold_entities(model,'A')
+    non_hetero_non_hydrogen_atoms = [x for x in atom_list if
+                        x.get_parent().get_full_id()[3][0] == ' '
+                        and x.element != 'H'
+    ]
     ns = pdb.NeighborSearch(atom_list)
 
     # perform neighborsearch on atoms within the radius d
     neighbor_atoms = ns.search(ca_coord,d)
-
-
     if remove_center:
         # remove atoms associated belonging to the central residue
-        neighbor_atoms = [x for x in neighbor_atoms if x.get_parent() != res]
-
+        neighbor_atoms = [x for x in neighbor_atoms
+                          if x.get_parent() != res
+                          and x.element != 'H'
+        ]
+        # remove atoms beonging to same chain--for peptide classification
+        #neighbor_atoms = [x for x in neighbor_atoms
+        #                  if x.get_full_id()[2] != res['CA'].get_full_id()[2]]
+    #print('Number of neihgbor atoms is {}'.format(len(neighbor_atoms)))
+    if len(neighbor_atoms) == 0:
+        print(res.get_full_id())
+    SASA_neighbors = [x for x in neighbor_atoms
+                      if x.get_parent().get_full_id()[3][0] == ' '
+                      and x.element != 'H']
+    SASA_neighbor_residues = [x.get_parent().get_resname() for x in SASA_neighbors]
+    #print(SASA_neighbor_residues)
+    SASA_neighbor_sns = [non_hetero_non_hydrogen_atoms.index(x) for x in SASA_neighbors]
+    
+    #calculate SASA
+    #print(struct)
+    freesasa.setVerbosity(freesasa.silent)
+    freesasa_result = freesasa.calcBioPDB(struct,
+                                          options = {'hetatm': False,
+                                                     'hydrogen': False,
+                                                     'join-models': False,
+                                                     'skip-unknown': False,
+                                                     'halt-at-unknown': False})[0]
+    SASA_weights = [freesasa_result.atomArea(x-1) for x in SASA_neighbor_sns]
+    SASA_weights = []
+    for i in SASA_neighbor_sns:
+        try:
+            SASA_weights.append(freesasa_result.atomArea(i-1))
+        except Exception as e:
+            print(e)
+            print(i)
+            print(np.array(SASA_neighbors)[np.where(np.array(SASA_neighbor_sns) == i)])
+            return 1
+                                
     # get atomic coords from neighboring atoms
-    return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.el_to_ind,COA=COA)
+    return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.ch_to_ind_encoding,COA=COA),SASA_weights

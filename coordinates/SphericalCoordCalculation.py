@@ -28,8 +28,8 @@ import protein
 
 
 def c(struct, res, d, easy, COA=False):
-
-    EL_CHANNEL_NUM = 4
+    #print('\n\n current struct is {}'.format(struct))
+    EL_CHANNEL_NUM = 6
     DIMENSION = 3
     ca_coord = res['CA'].get_coord()
     model_tag = res.get_full_id()[1]
@@ -40,17 +40,22 @@ def c(struct, res, d, easy, COA=False):
     else:
         curr_coords = [[[] for i in range(EL_CHANNEL_NUM)] for j in range(DIMENSION)]
     if d > 0:
-        neighbor_coords = co.get_res_neighbor_atomic_coords(res,d,struct)
-
-        for i in range(DIMENSION):
-            for j in range(EL_CHANNEL_NUM):
-                curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
-
-
-    curr_r,curr_t,curr_p = curr_coords
+        try:
+            neighbor_coords,SASA_weights = co.get_res_neighbor_atomic_coords(res,d,struct)
+            for i in range(DIMENSION):
+                for j in range(EL_CHANNEL_NUM):
+                    curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
+        except:
+            #print('Error: get_res_neighbor_atomic_coords error\n'
+            #      'Exception raised in neighbor coord gathering')
+            #print('The problematic struct is: {}'.format(struct))
+            p = 0
+            curr_coords,SASA_weights = (None,None)
+    
+    #curr_r,curr_t,curr_p = curr_coords
     full_id = res.get_full_id()
 
-    return res.get_resname(), full_id, curr_coords
+    return res.get_resname(), full_id, curr_coords, SASA_weights
 
 
 if __name__ == "__main__":
@@ -71,35 +76,64 @@ if __name__ == "__main__":
     
     logging.basicConfig(level=logging.DEBUG)
     ds = PDBPreprocessor(args.hdf5,args.dataset)
- 
+    bad_neighborhoods = []
     n = 0
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
-        for res, fid, invs in ds.execute(
+        for res, fid, invs, SASA_weights in ds.execute(
                 c, limit = None, params = {'d': args.d, 'easy' : args.easy, 'COA' : args.COA}, 
                 parallelism = args.parallelism):
-            if fid[3][2] != ' ':
-                print(fid)
-            #for i in range(4):
-                # with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/'+args.output,'r+') as f:
-                #     try:
-                #         coords = np.array([x[i] for x in invs])
-                #         pdb_name = fid[0]
-                #         res_id = (fid[1],fid[2],fid[3])
-                #         ch = protein.ind_to_el[i]
-                #         dset = f.create_dataset('{}/{}/{}/{}'.format(
-                #             pdb_name,
-                #             res_id,
-                #             args.d,
-                #             ch
-                #         )
-                #                                 ,data=coords) 
-                #         record_metadata(metadata,dset)
-                #     except ValueError as e:
-                #         print(e)
-                #         #except:
-                #         print("Unexpected error:", sys.exc_info()[0])
+            if invs == None:
+                bad_neighborhoods.append(fid)
+                n+=1
+                bar.next()
+                continue
+            
+            with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/' +
+                           args.output,'r+') as f:
+                try:
+                    pdb_name = fid[0]
+                    res_id = (fid[1],fid[2],fid[3])    
+                    dset = f.create_dataset('{}/{}/{}/{}'.format(
+                        pdb_name,
+                        res_id,
+                        args.d,
+                        'SASA_weights'
+                    )
+                                            ,data=SASA_weights) 
+                    record_metadata(metadata,dset)
+                except ValueError as e:
+                    i=1
+                    #print(e)
+                    #except:
+                    #print("Unexpected error:", sys.exc_info()[0])
+                        
+                for i in range(6):
+                    try:
+                        coords = np.array([x[i] for x in invs])
+                        pdb_name = fid[0]
+                        res_id = (fid[1],fid[2],fid[3])
+                        ch = protein.ind_to_ch_encoding[i]
+                        dset = f.create_dataset('{}/{}/{}/{}'.format(
+                            pdb_name,
+                            res_id,
+                            args.d,
+                            ch
+                        )
+                                                ,data=coords) 
+                        record_metadata(metadata,dset)
+                    except ValueError as e:
+                        i=1
+                        #print(e)
+                        #except:
+                        #print("Unexpected error:", sys.exc_info()[0])
                         
                     
                     #o.write(str(n) + ',' + res + ',' + str(fid)+ ',' + str(i) +',{},{},{}'.format(invs[0][i][j],invs[1][i][j],invs[2][i][j]) + '\n')
             n+=1
             bar.next()
+    print('Bad Neighborhoods')
+    #print(bad_neighborhoods)
+    np.save('bad_neighborhoods.npy',
+            bad_neighborhoods,
+            allow_pickle=True)
+    
