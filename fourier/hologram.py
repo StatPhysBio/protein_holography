@@ -137,8 +137,6 @@ def zernike_coeff_lm(r,t,p,n,r_max,l,m,weights):
 def zernike_coeff_l(r,t,p,n,r_max,l,weights=None):
     if weights is None:
         weights = np.ones(shape=r.shape[-1])
-    else:
-        print('nonzero weights')
     if (np.array(r).shape != np.array(t).shape or
         np.array(p).shape != np.array(t).shape):
         print('Error: input arrays do not have same shape')

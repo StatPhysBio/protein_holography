@@ -45,6 +45,8 @@ def get_val_data_id(args):
 def get_network_id(args):
     ignore_params = ['datadir','outputdir','verbosity',
                      'dataset','invariants',
-                     'parallelism','easy','hdf5'] 
+                     'parallelism','easy','hdf5',
+                     'subset'
+    ] 
     return get_id_from_params(args,ignore_params)
 

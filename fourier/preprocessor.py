@@ -43,7 +43,7 @@ def process_data(nb):
           int(nb[5].decode('utf-8')),
           nb[6].decode('utf-8')))
     try:
-        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/1PGA_SASA.hdf5',
+        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp12.hdf5',
                        'r') as f:
             C_coords = np.array(f["{}/{}/{}/C".format(name,nh,10.)])
             N_coords = np.array(f["{}/{}/{}/N".format(name,nh,10.)])
@@ -51,15 +51,17 @@ def process_data(nb):
             S_coords = np.array(f["{}/{}/{}/S".format(name,nh,10.)])
             HOH_coords = np.array(f["{}/{}/{}/HOH".format(name,nh,10.)])
             SASA_coords = np.array(f["{}/{}/{}/SASA".format(name,nh,10.)])
-            weights = np.array(f["{}/{}/{}/SASA_weights".format(name,nh,10.)])
-            
+            SASA_weights = np.array(f["{}/{}/{}/SASA_weights".format(name,nh,10.)])
+            charge_coords = np.array(f["{}/{}/{}/charge_coords".format(name,nh,10.)])
+            charge_weights = np.array(f["{}/{}/{}/charges".format(name,nh,10.)])
     except Exception as e:
         print(e)
         print(nb)
         print('failed')
         return False
-    coords = [C_coords,O_coords,N_coords,S_coords,HOH_coords,SASA_coords]
-
+    coords = [C_coords,O_coords,N_coords,S_coords,HOH_coords,SASA_coords,charge_coords]
+#    coords = [C_coords,O_coords,N_coords,S_coords]
+    weights = [None,None,None,None,None,SASA_weights,charge_weights]
 
     return process_data.callback(coords, weights, nb, **process_data.params)
 

@@ -30,47 +30,56 @@ import naming
 def c(coords,weights,nb,ks,proj,l,rmax):
     EL_CHANNEL_NUM = len(coords)
     # turn coordinates into coefficients
-    print(EL_CHANNEL_NUM)
+    #print(EL_CHANNEL_NUM)
     # to be used once coefficients are gathered for all channels for current res
     curr_coeffs = []
     # list of the dicts for each channel for current res
     channel_dicts = []
+    coords[6] = np.einsum('ij->ji',coords[6])
+    try:
+        # for coord in coords:
+        #     print(coord.shape)
+        # for weight in weights:
+        #     if weight is None:
+        #         continue
+        #     else:
+        #         print(weight.shape)
 
-    for k in ks:
-        for curr_ch in range(EL_CHANNEL_NUM):
-            if curr_ch == 5:
-                curr_weights = weights
-            else:
-                curr_weights = None
-            curr_channel_coeffs = {}
-            for l in range(l + 1):
-                # if the current channel has no signal then append zero holographic signal
-                if len(coords[curr_ch][0]) == 0:
-                    curr_channel_coeffs[l] = np.array([0.]*(2*l+1))
-                    continue
-                if proj == 'hgram':
-                    curr_channel_coeffs[l] = hgm.hologram_coeff_l(coords[curr_ch][0],
-                                                                  coords[curr_ch][1],
-                                                                  coords[curr_ch][2],
-                                                                  rH, k, l)
+        for k in ks:
+            for curr_ch in range(EL_CHANNEL_NUM):
+                curr_channel_coeffs = {}
+                for l in range(l + 1):
+                    # if the current channel has no signal then append zero holographic signal
+                    if len(coords[curr_ch][0]) == 0:
+                        curr_channel_coeffs[l] = np.array([0.]*(2*l+1))
+                        continue
+                    if proj == 'hgram':
+                        curr_channel_coeffs[l] = hgm.hologram_coeff_l(coords[curr_ch][0],
+                                                                      coords[curr_ch][1],
+                                                                      coords[curr_ch][2],
+                                                                      rH, k, l
+                        )
 
-                if proj == 'zgram':
-                    curr_channel_coeffs[l] = hgm.zernike_coeff_l(coords[curr_ch][0],
-                                                                 coords[curr_ch][1],
-                                                                 coords[curr_ch][2],
-                                                                 k, rmax, l,
-                                                                 weights=curr_weights
-                    )
- #           print(curr_channel_coeffs[0].shape)
-            channel_dicts.append(curr_channel_coeffs)
+                    if proj == 'zgram':
+                        curr_channel_coeffs[l] = hgm.zernike_coeff_l(coords[curr_ch][0],
+                                                                     coords[curr_ch][1],
+                                                                     coords[curr_ch][2],
+                                                                     k, rmax, l,
+                                                                     weights=weights[curr_ch]
+                        )
+                #print(curr_channel_coeffs[0].shape)
+                channel_dicts.append(curr_channel_coeffs)
 
-    # coefficients gathered for every channel for this sample residue
-    # channels_dicts currently has the structure n_c x l x m
-    # we can now swap n_c and l
-    for l in range(l + 1):
-        curr_coeffs.append(np.stack([x[l] for x in channel_dicts]))
-#    print(curr_coeffs)
-
+        # coefficients gathered for every channel for this sample residue
+        # channels_dicts currently has the structure n_c x l x m
+        # we can now swap n_c and l
+        for l in range(l + 1):
+            curr_coeffs.append(np.stack([x[l] for x in channel_dicts]))
+            #    print(curr_coeffs)
+    except Exception as e:
+        print(e)
+        return (None,nb)
+    print('success')
     return (curr_coeffs,nb)
 
 
@@ -103,11 +112,20 @@ if __name__ == "__main__":
     a = []
     n = 0
     data_ids = []
+    i = 0
+    t = 0
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         for proj,nb in ds.execute(
                 c, limit = None, params = {'ks': args.k, 'proj': args.proj[0], 'l': args.l[0],
                                            'rmax': args.rmax[0]},
                 parallelism = args.parallelism):
+            t += 1
+            if proj is None:
+                print(nb,' returned error')
+                i += 1
+                continue
+            if t%100 == 0:
+                print('\n\n Status ', i/t, '\n\n')
             name = nb[1].decode('utf-8')
             nh = (int(nb[2].decode('utf-8')),
                   nb[3].decode('utf-8'),
