@@ -22,7 +22,7 @@ import sys
 sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
 from posterity import get_metadata,record_metadata
 
-
+print('new file used')
 logging.getLogger().setLevel(logging.INFO)
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -193,9 +193,10 @@ checkpoint_filepath = os.path.join(
 
 # parameters for the network
 ds_train = get_dataset(input_data_dir, train_data_id)
+#ds_train = ds_train.shuffle(1000000000)
 ds_val = get_dataset(input_data_dir,val_data_id)
 inputs,y_true = get_inputs(input_data_dir,train_data_id)
-
+print('DATASET: ',ds_train)
 # get the number of classes directly from the dataset
 for el in ds_val:
     n_classes = el[1].shape[0]
@@ -212,14 +213,14 @@ network = hnn.hnn(
     args.reg_strength[0], args.dropout_rate[0], args.scale[0])
 
 
-tf.function
+@tf.function
 def loss_fn(truth, pred):
     return tf.nn.softmax_cross_entropy_with_logits(
         labels = truth,
         logits = pred)
 @tf.function
 def confidence(truth,pred):
-    return tf.math.reduce_max(tf.nn.softmax(pred))
+    return tf.math.reduce_mean(tf.math.reduce_max(tf.nn.softmax(pred),axis=0))
     
 
 optimizers = ['Adam','SGD']
@@ -323,7 +324,7 @@ try:
                               callbacks=[model_checkpoint_callback,
                                          tboard_callback,
                                          early_stopping],
-                              config=run_config
+                              #config=run_config
                               )
         except KeyboardInterrupt:
             print('Training interrupted...continuing')
