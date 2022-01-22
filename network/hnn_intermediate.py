@@ -6,6 +6,7 @@
 # classify the scalar output of every layer in the CG network.
 #
 
+import tensorflow.keras.backend as K
 import tensorflow as tf
 import linearity
 import nonlinearity
@@ -13,8 +14,9 @@ import spherical_batch_norm as sbn
 
 class hnn_intermediate(tf.keras.Model):
     
-    def __init__(self, L_MAX, hidden_l_dims, num_layers, num_classes, cg_matrices, num_dense_layers, scale,
-                 layer,
+    def __init__(self, L_MAX, hidden_l_dims, num_layers,
+                 num_classes, cg_matrices, num_dense_layers,
+                 reg_strength, dropout_rate, scale, #layer,
                  **kwargs):
 
         # call to the super function tf.keras.Model
@@ -36,35 +38,39 @@ class hnn_intermediate(tf.keras.Model):
         # number of dense layers
         self.num_dense_layers = num_dense_layers
         # layer for intermediate output
-        self.layer = layer
-
+        #self.layer = layer
+        self.reg_strength = reg_strength
+        self.dropout_rate = dropout_rate
         # create the layers
         temp_layers = []
         for i in range(num_layers):
             if i == 0:
 #                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, scale = scale))                
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, self.reg_strength, scale = scale))                
                 temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             else:
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX))
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX, self.reg_strength))
                 temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
             temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
 #            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         for i in range(num_dense_layers):
             temp_layers.append(
+                tf.keras.layers.Dropout(dropout_rate)
+            )
+            temp_layers.append(
                 tf.keras.layers.Dense(
                     num_classes,kernel_initializer=tf.keras.initializers.Orthogonal(),
                     bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(0.00001),                    
+                    kernel_regularizer=tf.keras.regularizers.l1(reg_strength),                    
                 )
             )
 
         # assignment of layers to a class feature
         self.layers_ = temp_layers
 
-    @tf.function
+#    @tf.function
     def call(self, input):
-        
+        print('Called')
         # list to keep track of scalar output at each layer
         scalar_output = []
         
@@ -106,3 +112,6 @@ class hnn_intermediate(tf.keras.Model):
 
         return intermediate_output
             
+    @tf.function
+    def model(self):
+        return tf.keras.Model(inputs=[self.input_],outputs=self.call(self.input_))

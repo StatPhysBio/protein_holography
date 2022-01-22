@@ -1,5 +1,5 @@
 #
-# Python module to implement equivariant neural network
+# Pythonla module to implement equivariant neural network
 # based on Clebsch-Gordan networks. This module uses linearity.py
 # and nonlinearity.py to implement the linear and nonlinear operations
 # of CG networks. Then it implements a dense layer at the end to 
@@ -11,6 +11,7 @@ import tensorflow as tf
 import linearity
 import nonlinearity
 import spherical_batch_norm as sbn
+import numpy as np
 
 class hnn(tf.keras.Model):
     
@@ -40,17 +41,18 @@ class hnn(tf.keras.Model):
         # create the layers
         temp_layers = []
         for i in range(num_layers):
-
+            curr_L_MAX = L_MAX
+#            curr_L_MAX = np.min([L_MAX+1,10])
             if i == 0:
 #                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX,
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, curr_L_MAX,
                                                        reg_strength,scale = scale))
-                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+                temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
             else:
-                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, self.L_MAX,
+                temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, curr_L_MAX,
                                                        reg_strength))
-                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
-            temp_layers.append(nonlinearity.Nonlinearity(self.L_MAX, self.cg_matrices))
+                temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
+            temp_layers.append(nonlinearity.Nonlinearity(curr_L_MAX, self.cg_matrices))
 #            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         for i in range(num_dense_layers):
             temp_layers.append(
@@ -83,6 +85,7 @@ class hnn(tf.keras.Model):
         curr_nodes = input
         self.input_ = input
         # begin recording scalar output with the input 
+        # USE FOR INVARIANT NETWORK
         scalar_output.append(curr_nodes[0])
         
         # compute the layers in the network while recording the scalar output 
@@ -90,8 +93,16 @@ class hnn(tf.keras.Model):
         for layer in self.layers_[:-self.num_dense_layers*2]:
             curr_nodes = layer(curr_nodes)
 #            if isinstance(layer,(sbn.SphericalBatchNorm)):
+            # USE FOR INVARIANT NETWORK
             if isinstance(layer,(nonlinearity.Nonlinearity)):
                 scalar_output.append(curr_nodes[0])
+            # USE FOR NON-INVARIANT NETWORK
+            # if layer == self.layers[-3]:
+            #     a = [tf.reshape(curr_nodes[i],
+            #                      [-1,
+            #                       curr_nodes[i].shape[1]*curr_nodes[i].shape[2]])
+            #                      for i in range(self.L_MAX + 1)]
+            #    scalar_output = tf.concat(a,axis=-1)
 
         # transform scalar output from list of complex with dimensions 
         # num_layers x L_max x 1 to a list of floats with one dimension
@@ -101,10 +112,12 @@ class hnn(tf.keras.Model):
         scalar_output = tf.squeeze(
                             tf.concat([scalar_out_real,scalar_out_imag], axis=1), axis=-1
                         )
+        #scalar_output = tf.concat([scalar_out_real,scalar_out_imag], axis=1)
 
         # feed scalar output into dense layer
         for i in range(self.num_dense_layers*2):
             scalar_output = self.layers_[-2*self.num_dense_layers+i](scalar_output)
+
         return scalar_output
             
     @tf.function

@@ -28,7 +28,7 @@ def get_data_id(args):
     ignore_params = ['datadir','outputdir',
                      'verbosity','bsize',
                      'learnrate','hdim',
-                     'nlayers','eVal',
+                     'nlayers','eVal','eTest',
                      'scale','load',
                      'netL','dropout_rate',
                      'n_dense','reg_strength',
@@ -42,7 +42,22 @@ def get_val_data_id(args):
     ignore_params = ['datadir','outputdir',
                      'verbosity','bsize',
                      'learnrate','hdim',
-                     'nlayers','eVal',
+                     'nlayers','eVal','eTest',
+                     'scale','load',
+                     'netL','dropout_rate',
+                     'netL','dropout_rate',
+                     'n_dense','reg_strength',
+                     'opt'
+] 
+    return get_id_from_params(val_args,ignore_params)
+
+def get_test_data_id(args):
+    val_args = copy.deepcopy(args)
+    val_args.e = args.eTest
+    ignore_params = ['datadir','outputdir',
+                     'verbosity','bsize',
+                     'learnrate','hdim',
+                     'nlayers','eVal','eTest',
                      'scale','load',
                      'netL','dropout_rate',
                      'netL','dropout_rate',
@@ -52,6 +67,11 @@ def get_val_data_id(args):
     return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
+    ignore_params = ['datadir','outputdir','verbosity','load','eTest']
+    return get_id_from_params(args,ignore_params,network=True)
+
+
+def get_test_network_id(args):
     ignore_params = ['datadir','outputdir','verbosity','load']
     return get_id_from_params(args,ignore_params,network=True)
 

@@ -5,12 +5,13 @@ import scipy
 import naming
 import wigner
 
-def get_dataset(data_dir, data_id):
 
+
+def get_dataset(data_dir, data_id):
     hgrams = np.load('/'.join([data_dir,data_id + '.npy']),
                      allow_pickle=True,
                      encoding='latin1')[()]
-    print(type(hgrams))
+
     print('/'.join([data_dir,data_id + '.npy']))
 #     # assemble complex holograms from real and imaginary parts
 #     hgrams = {}
@@ -21,10 +22,7 @@ def get_dataset(data_dir, data_id):
     labels = np.load('/'.join([data_dir,'labels_' + data_id + '.npy']),
                      allow_pickle=True,
                      encoding='latin1')
-    data_length = len(labels)
-    ds = tf.data.Dataset.from_tensor_slices((hgrams,labels))
-    ds = ds.shuffle(data_length)
-    return ds
+    return tf.data.Dataset.from_tensor_slices((hgrams,labels))
 
 def get_ss_dataset(data_dir, data_id):
 

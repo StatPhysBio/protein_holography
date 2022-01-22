@@ -31,7 +31,7 @@ parser.add_argument('--netL',
                     type=int,
                     nargs='+',
                     default=None,
-                    help='L value for L max in network')
+                    help='L value for network')
 parser.add_argument('-l',
                     dest='l',
                     type=int,
@@ -76,6 +76,12 @@ parser.add_argument('-e',
                     help='examples per aminoacid')
 parser.add_argument('--eVal',
                     dest='eVal',
+                    type=int,
+                    nargs='+',
+                    default=None,
+                    help='examples per aminoacid validation')
+parser.add_argument('--eTest',
+                    dest='eTest',
                     type=int,
                     nargs='+',
                     default=None,
@@ -131,6 +137,30 @@ parser.add_argument('--scale',
                     nargs='+',
                     default=None,
                     help='scale for rescaling inputs')
+parser.add_argument('--dropout',
+                    dest='dropout_rate',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='rate for dropout')
+parser.add_argument('--reg',
+                    dest='reg_strength',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='strength for regularization (typically l1 or l2')
+parser.add_argument('--n_dense',
+                    dest='n_dense',
+                    type=int,
+                    nargs='+',
+                    default=None,
+                    help='number of dense layers to put at end of network')
+parser.add_argument('--optimizer',
+                    dest='opt',
+                    type=str,
+                    nargs='+',
+                    default=['Adam'],
+                    help='Optimizer to use')
 parser.add_argument('--load',
                     dest='load',
                     type=bool,
@@ -142,7 +172,9 @@ args =  parser.parse_args()
 # compile id tags for the data and the network to be trained
 train_data_id = naming.get_data_id(args)
 val_data_id = naming.get_val_data_id(args)
+test_data_id = naming.get_test_data_id(args)
 network_id = naming.get_network_id(args)
+test_network_id = naming.get_test_network_id(args)
 
 logging.info("GPUs Available: %d", len(tf.config.experimental.list_physical_devices('GPU')))
 #tf.config.threading.set_intra_op_parallelism_threads(4)
@@ -161,6 +193,7 @@ checkpoint_filepath = os.path.join(
 # parameters for the network
 ds_train = get_dataset(input_data_dir, train_data_id)
 ds_val = get_dataset(input_data_dir,val_data_id)
+ds_test = get_dataset(input_data_dir,test_data_id)
 
 # get the number of classes directly from the dataset
 for el in ds_val:
@@ -174,7 +207,8 @@ logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
     args.netL[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, 1, args.scale[0])
+    tf_cg_matrices, args.n_dense[0], args.reg_strength[0],
+    args.dropout_rate[0], args.scale[0])
 
 @tf.function
 def loss_fn(truth, pred):
@@ -202,7 +236,7 @@ network.compile(optimizer=optimizer,
 ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 ds_val_trunc = ds_val.batch(2)
 
-network.evaluate(ds_train.batch(1))
+network.evaluate(ds_train.batch(256))
 network.summary()
 
 #print(network.model())
@@ -222,19 +256,23 @@ try:
     try:
         if args.load:
             network.load_weights(checkpoint_filepath)
-            network.evaluate(ds_train.batch(1).take(1000))
+            print('Confirming validation accuracy')
+            network.evaluate(ds_val.batch(256))
         else:
             print('not loading')
-    except:
+    except Exception as e:
+        print(e)
         logging.error("Unable to load weights.")
-    prediction = network.predict(ds_val.batch(1),
+    print('Getting testing accuracy')
+    network.evaluate(ds_test.batch(1))
+    prediction = network.predict(ds_test.batch(1),
                           callbacks=[model_checkpoint_callback,
                                      early_stopping])
     if args.load:
-        np.save(args.outputdir + '/loaded_predictions_' + network_id,
+        np.save(args.outputdir + '/loaded_predictions_' + test_network_id,
                 prediction)
     else:
-        np.save(args.outputdir + '/predictions_' + network_id,
+        np.save(args.outputdir + '/predictions_' + test_network_id,
                 prediction)
 
 except KeyboardInterrupt:

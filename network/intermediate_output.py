@@ -137,6 +137,24 @@ parser.add_argument('--load',
                     type=bool,
                     default=False,
                     help='choose to load weights')
+parser.add_argument('--dropout',
+                    dest='dropout_rate',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='rate for dropout')
+parser.add_argument('--reg',
+                    dest='reg_strength',
+                    type=float,
+                    nargs='+',
+                    default=None,
+                    help='strength for regularization (typically l1 or l2')
+parser.add_argument('--n_dense',
+                    dest='n_dense',
+                    type=int,
+                    nargs='+',
+                    default=None,
+                    help='number of dense layers to put at end of network')
 
 args =  parser.parse_args()
 
@@ -159,6 +177,7 @@ checkpoint_filepath = os.path.join(
     args.outputdir,
     network_id)
 
+
 # parameters for the network
 ds_train = get_dataset(input_data_dir, train_data_id)
 ds_val = get_dataset(input_data_dir,val_data_id)
@@ -175,11 +194,14 @@ logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
     args.netL[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, 1, args.scale[0])
-intermediate_layer = 1
+    tf_cg_matrices, args.n_dense[0], args.reg_strength[0], args.dropout_rate[0],
+    args.scale[0])
+#intermediate_layer = 1
 intermediate_network = hnn_inter.hnn_intermediate(
-    args.netL[0], hidden_l_dims, nlayers, n_classes,
-    tf_cg_matrices, 1, args.scale[0],intermediate_layer)
+    args.netL[0], hidden_l_dims, nlayers,
+    n_classes, tf_cg_matrices, args.n_dense[0],
+    args.reg_strength[0], args.dropout_rate[0], args.scale[0])
+#    intermediate_layer)
 
 @tf.function
 def loss_fn(truth, pred):
@@ -208,7 +230,7 @@ intermediate_network.compile(optimizer=optimizer,
 # training dataset shouldn't be truncated unless testing
 ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 ds_val_trunc = ds_val.batch(2)
-intermediate_network.evaluate(ds_train.batch(1).take(1))
+#intermediate_network.evaluate(ds_train.batch(1).take(1))
 network.evaluate(ds_train.batch(1).take(1))
 network.summary()
 

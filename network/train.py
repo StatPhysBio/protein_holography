@@ -22,7 +22,6 @@ import sys
 sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
 from posterity import get_metadata,record_metadata
 
-print('new file used')
 logging.getLogger().setLevel(logging.INFO)
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -193,10 +192,12 @@ checkpoint_filepath = os.path.join(
 
 # parameters for the network
 ds_train = get_dataset(input_data_dir, train_data_id)
-#ds_train = ds_train.shuffle(1000000000)
+print('Training dimensions:')
+print(ds_train)
+ds_train = ds_train.shuffle(1000000000)
 ds_val = get_dataset(input_data_dir,val_data_id)
 inputs,y_true = get_inputs(input_data_dir,train_data_id)
-print('DATASET: ',ds_train)
+
 # get the number of classes directly from the dataset
 for el in ds_val:
     n_classes = el[1].shape[0]
@@ -204,7 +205,8 @@ for el in ds_val:
 
 # set up network
 nlayers = args.nlayers[0]
-hidden_l_dims = [[args.hdim[0]] * (args.netL[0] + 1)] * nlayers
+hidden_l_dims = [[args.hdim[0]] * (args.netL[0] * 2)] * nlayers
+print('hidden L dims',hidden_l_dims)
 logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
 logging.info("Hidden dimensions: %s", hidden_l_dims) 
 network = hnn.hnn(
@@ -305,7 +307,8 @@ try:
     try:
         print('not loading')
 #        network.load_weights(checkpoint_filepath)
-    except:
+    except Exception as e:
+        print(e)
         logging.error("Unable to load weights.")
 
     while bs <= 0:
@@ -323,8 +326,7 @@ try:
                               verbose = args.verbosity,
                               callbacks=[model_checkpoint_callback,
                                          tboard_callback,
-                                         early_stopping],
-                              #config=run_config
+                                         early_stopping]
                               )
         except KeyboardInterrupt:
             print('Training interrupted...continuing')
