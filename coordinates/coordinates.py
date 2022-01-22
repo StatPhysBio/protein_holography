@@ -125,10 +125,13 @@ def el_channel(atom):
     #channels.append(atom.element)
     if atom.get_parent().get_resname() == 'HOH':
         channels.append('HOH')
+        #print(1)
     else:
         channels.append(atom.element)
-        channels.append('SASA')
-
+        if atom.get_parent().get_full_id()[3][0] == ' ':
+            channels.append('SASA')
+        #else:
+        #    print(atom.get_parent().get_full_id())
     return channels
 
 
@@ -193,14 +196,19 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
     model = struct[model_tag]
     atom_list = pdb.Selection.unfold_entities(model,'A')
     non_hetero_non_hydrogen_atoms = [x for x in atom_list if
-                        x.get_parent().get_full_id()[3][0] == ' '
-                        and x.element != 'H'
+                                     x.get_parent().get_full_id()[3][0] == ' '
+                                     and x.element != 'H'
     ]
     ns = pdb.NeighborSearch(atom_list)
+    #ns = pdb.NeighborSearch(non_hetero_non_hydrogen_atoms)
 
     # perform neighborsearch on atoms within the radius d
     neighbor_atoms = ns.search(ca_coord,d)
     if remove_center:
+        #central_num =  len([x for x in neighbor_atoms
+        #                  if x.get_parent() == res
+        #])
+        #print(res,central_num)
         # remove atoms associated belonging to the central residue
         neighbor_atoms = [x for x in neighbor_atoms
                           if x.get_parent() != res
@@ -212,9 +220,12 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
     #print('Number of neihgbor atoms is {}'.format(len(neighbor_atoms)))
     if len(neighbor_atoms) == 0:
         print(res.get_full_id())
+        #print(neighbor_atoms[0].get_parent().get_full_id())
     SASA_neighbors = [x for x in neighbor_atoms
                       if x.get_parent().get_full_id()[3][0] == ' '
-                      and x.element != 'H']
+                      and x.element != 'H'
+    ]
+    
     SASA_neighbor_residues = [x.get_parent().get_resname() for x in SASA_neighbors]
     #print(SASA_neighbor_residues)
     SASA_neighbor_sns = [non_hetero_non_hydrogen_atoms.index(x) for x in SASA_neighbors]
@@ -238,6 +249,10 @@ def get_res_neighbor_atomic_coords(res,d,struct,remove_center=True,COA=False):
             print(i)
             print(np.array(SASA_neighbors)[np.where(np.array(SASA_neighbor_sns) == i)])
             return 1
-                                
+    # print('Neighbor atoms length = ',len([x for x in neighbor_atoms if x.get_parent().get_resname() != 'HOH']))
+    # print('SASA_weights length = ',len(SASA_weights))
+    # print('SASA_neighbors lenght = ',len(SASA_neighbors))
+    # print('SASA_sns length = ',len(SASA_neighbor_sns))
+    # print('\n\n')
     # get atomic coords from neighboring atoms
     return get_coords(neighbor_atoms,ca_coord,el_channel,EL_CHANNEL_NUM,protein.ch_to_ind_encoding,COA=COA),SASA_weights

@@ -34,11 +34,16 @@ class Config:
         parameters = self.config_runtime['parameters']
         for el in itertools.product(* parameters.values()):
             cr = self.config_runtime.copy() # shallow copy
+            cr1 = self.config_runtime.copy() # shallow copy
             i = 0
             for k in parameters.keys():
                 cr[k] = el[i]
+                if type(el[i]) == str:
+                    cr1[k] = el[i].replace(' ','_').replace('/','_')
+                else:
+                    cr1[k] = el[i]
                 i = i + 1
-            cr['jobname'] = cr['jobname'].format(** cr)
+            cr['jobname'] = cr['jobname'].format(** cr1)
             yield cr['jobname'], '\n'.join([
                 self.config_static.get('sbatch').format(** cr),
                 self.config_runtime.get('command').format(** cr)])

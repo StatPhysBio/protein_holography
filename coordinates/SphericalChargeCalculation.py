@@ -53,7 +53,8 @@ def c(nb_list, pose, d, easy, COA=False):
                 #print('Getting charge')
                 charge_coords,charges = charge.get_res_neighbor_charge_coords(res,pose,d)
                 
-            except:
+            except Exception as e:
+                print(e)
                 print(nb,' returned exception')
                 #print(e)
                 #print('Error: get_res_neighbor_atomic_coords error\n'

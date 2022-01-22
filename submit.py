@@ -6,6 +6,7 @@ throwaway_script = 'batch_script.slurm'
 config = Config()
 
 for job, script in config.generate_sbatch_scripts():
+    print('writing script')
     f = open(throwaway_script,'w')
     f.write(script)
     f.close()

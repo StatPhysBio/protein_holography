@@ -34,7 +34,7 @@ def c(struct, res, d, easy, COA=False):
     ca_coord = res['CA'].get_coord()
     model_tag = res.get_full_id()[1]
     model = struct[model_tag]
-
+    
     if easy:
         curr_coords = co.get_res_atomic_coords(res,COA=COA,ignore_alpha=False)
     else:
@@ -45,10 +45,12 @@ def c(struct, res, d, easy, COA=False):
             for i in range(DIMENSION):
                 for j in range(EL_CHANNEL_NUM):
                     curr_coords[i][j] = curr_coords[i][j] + neighbor_coords[i][j]
-        except:
+        except Exception as e:
             #print('Error: get_res_neighbor_atomic_coords error\n'
             #      'Exception raised in neighbor coord gathering')
             #print('The problematic struct is: {}'.format(struct))
+            print('Error returned')
+            print(e)
             p = 0
             curr_coords,SASA_weights = (None,None)
     

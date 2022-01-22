@@ -55,7 +55,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         '--dataset',
-        dest='dataset',
+       dest='dataset',
         type=str,
         help='dataset within hdf5 to sample from',
         default=None
@@ -90,7 +90,10 @@ if __name__ == "__main__":
     master_list = np.array(master_list)
     print(master_list[:10])
     with h5py.File(args.hdf5,'r+') as f:
-        ds = f.create_dataset(args.dataset[:-4] + '/complete_sample_1',
+        ds = f.create_dataset(
+#            args.dataset[:-4] + '/complete_sample',
+#            args.dataset + '/complete_sample',
+            'complete_sample',
                               data = master_list)
 
     print(len(master_list))

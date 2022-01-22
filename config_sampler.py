@@ -51,7 +51,7 @@ class Config:
                 self.config_runtime['parameters'][k] = np.random.uniform(low=low,high=high,size=n)
             # log-uniform sampling
             if mode == 1:
-                self.config_runtime['parameters'][k] = np.exp(np.random.uniform(low=low,high=high,size=n))
+                self.config_runtime['parameters'][k] = np.power(10,np.random.uniform(low=low,high=high,size=n))
             #uniform discrete
             if mode == 2:
                self.config_runtime['parameters'][k] = np.random.randint(low=low,high=high+1,size=n)

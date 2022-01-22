@@ -28,9 +28,9 @@ def c(pose):
         return (None,)
 
     try:
-        structural_info = get_structural_info(pose)
+        pdb,ragged_structural_info = get_structural_info(pose)
         mat_structural_info = pad_structural_info(
-            *structural_info,padded_length=200000
+            ragged_structural_info,padded_length=200000
         )
     except Exception as e:
         print(e)
@@ -39,7 +39,7 @@ def c(pose):
 
 
     
-    return mat_structural_info
+    return (pdb,*mat_structural_info)
 
 
 if __name__ == "__main__":
@@ -68,8 +68,8 @@ if __name__ == "__main__":
         ('elements', 'S1', (max_atoms)),
         ('res_ids', 'S5', (max_atoms,5)),
         ('coords', 'f8', (max_atoms,3)),
-        ('charges', 'f8', (max_atoms)),
         ('SASAs', 'f8', (max_atoms)),
+        ('charges', 'f8', (max_atoms)),
     ])
     with h5py.File(args.hdf5_out,'w') as f:
         f.create_dataset(args.pdb_list,

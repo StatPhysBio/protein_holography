@@ -67,11 +67,15 @@ def get_test_data_id(args):
     return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
+
     ignore_params = ['datadir','outputdir','verbosity','load','eTest']
     return get_id_from_params(args,ignore_params,network=True)
 
 
 def get_test_network_id(args):
-    ignore_params = ['datadir','outputdir','verbosity','load']
+    ignore_params = ['datadir','outputdir','verbosity','load',
+                     'subset'
+    ]
+
     return get_id_from_params(args,ignore_params,network=True)
 

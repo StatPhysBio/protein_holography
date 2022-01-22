@@ -43,7 +43,7 @@ def process_data(nb):
           int(nb[5].decode('utf-8')),
           nb[6].decode('utf-8')))
     try:
-        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp12.hdf5',
+        with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp12_redo.hdf5',
                        'r') as f:
             C_coords = np.array(f["{}/{}/{}/C".format(name,nh,10.)])
             N_coords = np.array(f["{}/{}/{}/N".format(name,nh,10.)])

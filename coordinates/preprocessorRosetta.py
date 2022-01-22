@@ -47,7 +47,7 @@ def process_data(nb_list):
     
     #pdb_file = '/gscratch/stf/mpun/data/' + pdb + '.pdb'
     #pdb_file = '/gscratch/stf/mpun/data/TCRStructure/pdbs/' + pdb + '.pdb'
-    pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/validation/' + pdb + '.pdb'
+    pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/training_30/' + pdb + '.pdb'
     try:
         pose = pyrosetta.pose_from_pdb(pdb_file)
     except:

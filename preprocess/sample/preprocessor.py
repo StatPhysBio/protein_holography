@@ -24,7 +24,7 @@ def load_data(pdb):
 
     try:
         struct = parser.get_structure(name,
-                                      '/gscratch/stf/mpun/data/casp11/training30/{}.pdb'.format(name))
+                                      '/gscratch/stf/mpun/data/casp12/pdbs/training_30/{}.pdb'.format(name))
         exists = True
     except:
         exists= False
@@ -35,7 +35,8 @@ def load_data(pdb):
 def process_data(pdb):
     assert(process_data.callback)
     
-    parser = MMTFParser()
+    #parser = MMTFParser()
+    parser = PDBParser()
     try:
         name = pdb.decode('utf-8')
     except Exception as e:
@@ -43,7 +44,11 @@ def process_data(pdb):
     try:
         with warnings.catch_warnings(): 
             warnings.simplefilter('ignore', PDBConstructionWarning)
-            struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
+            struct = parser.get_structure('{}'.format(name),
+                                          '/gscratch/stf/mpun/data/{}.pdb'.format(name))
+#                                          '/gscratch/stf/mpun/data/casp12/pdbs/training_30/{}.pdb'.format(name))
+#                                          '/gscratch/stf/mpun/data/TCRStructure/pdbs/{}.pdb'.format(name))
+            #struct = parser.get_structure('/gscratch/stf/mpun/data/{}.mmtf'.format(name))
     except Exception as e: 
         print(e)
         print(pdb)

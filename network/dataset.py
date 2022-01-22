@@ -22,7 +22,10 @@ def get_dataset(data_dir, data_id):
     labels = np.load('/'.join([data_dir,'labels_' + data_id + '.npy']),
                      allow_pickle=True,
                      encoding='latin1')
-    return tf.data.Dataset.from_tensor_slices((hgrams,labels))
+    data_length = len(labels)
+    ds = tf.data.Dataset.from_tensor_slices((hgrams,labels))
+    ds = ds.shuffle(data_length)
+    return ds
 
 def get_ss_dataset(data_dir, data_id):
 

@@ -753,7 +753,7 @@ def get_amino_acid_sample_from_protein_list_mmtf(protein_list,
     while aa_ind < len(aa_to_sample):
         if(aa_ind%20 == 0):
             print(aa_ind)
-        # cool to keep track of whether or not the current amino acid was found
+        # bool to keep track of whether or not the current amino acid was found
         aa_found = False
 
         # get the current aa and the current protein to check for this aa

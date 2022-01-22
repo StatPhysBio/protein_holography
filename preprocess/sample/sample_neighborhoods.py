@@ -69,13 +69,17 @@ name = 'img={}_max_res={}'.format(
     ,args.res)
 
 num_sample = {
-    'train': 1024,
+    'train': 10000,
     'val': 128,
     'test': 128
 }
 
 for x in ['train','val','test']:
-    print('pdb_subsets/{}/{}'.format(name,x))
+    print('pdb_subsets/{}/split_{}_{}_{}/{}/pdbs'.format(name,
+                                                                args.x_train,
+                                                                args.x_val,
+                                                                args.x_test,
+                                                                x))
     pdb_list = f['pdb_subsets/{}/split_{}_{}_{}/{}/pdbs'.format(name,
                                                                 args.x_train,
                                                                 args.x_val,

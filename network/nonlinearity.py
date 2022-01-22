@@ -13,6 +13,7 @@ import tensorflow as tf
 import numpy as np
 
 class Nonlinearity(tf.keras.layers.Layer):
+
     def __init__(self, L_MAX, cg_matrices, **kwargs):
         super().__init__(**kwargs)
         self.L_MAX = L_MAX

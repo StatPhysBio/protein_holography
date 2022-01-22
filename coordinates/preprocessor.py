@@ -86,6 +86,7 @@ class PDBPreprocessor:
         #df = pd.read_table(path, header=None, names=["aa", "neighborhood", "extra"])
         with h5py.File(hdf5_file,'r') as f:
             nh_list = np.array(f[nh_list])
+        N = len(nh_list)
         self.__data = nh_list
 #        self.__data = pd.Series(nh_list,
 #                                index=['aa',

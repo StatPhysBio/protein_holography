@@ -4,6 +4,8 @@ import pyrosetta
 import numpy as np
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
 import h5py
+from functools import partial
+
 
 def get_pose_residue_number(
     pose,
@@ -57,7 +59,7 @@ def get_structural_info(
     # extract coords and sasa from pyRosetta
     atom_sasa = calculate_sasa(pose)
     coords_rows = pose_coords_as_rows(pose)
-
+    
     pi = pose.pdb_info()
     pdb = pi.name().split('.')[0][-4:].encode()
     
@@ -75,17 +77,9 @@ def get_structural_info(
             sasa = atom_sasa.get(atom_id)
             curr_coords = coords_rows[k]
             charge = pose.residue_type(i).atom_charge(j)
-            res_id = np.array(
-                [aa,
-                 pdb,
-                 chain,
-                 resnum,
-                 icode
-                ],
-                dtype='S5'
-            )
-                
+
             
+            res_id =np.array([aa,pdb,chain,resnum,icode],dtype='S5')
             
             atom_names.append(atom_name)
             elements.append(element)
@@ -95,36 +89,52 @@ def get_structural_info(
             charges.append(charge)
             
             k += 1
+            
+    atom_names = np.array(atom_names,dtype='S4')
+    elements = np.array(elements,dtype='S1')
+    sasas = np.array(sasas)
+    coords = np.array(coords)
+    charges = np.array(charges)
+    res_ids = np.array(res_ids)
+    
+    return pdb,(atom_names,elements,res_ids,coords,sasas,charges)
 
-    return pdb,atom_names,elements,res_ids,coords,sasas,charges
+# given a matrix, pad it with empty array
+def pad(arr,padded_length=100):
+
+    # get dtype of input array
+    dt = arr[0].dtype
+
+    # shape of sub arrays and first dimension (to be padded)
+    shape = arr.shape[1:]
+    orig_length = arr.shape[0]
+
+    # check that the padding is large enough to accomdate the data
+    if padded_length < orig_length:
+        print('Error: Padded length of {}'.format(padd_length),
+              'is smaller than original length of array {}'.format(orig_length))
+
+    # create padded array
+    padded_shape = (padded_length,*shape)
+    mat_arr = np.empty(padded_shape, dtype=dt)
+    
+    # if type is string fill array with empty strings
+    if np.issubdtype(bytes, dt):
+        mat_arr.fill(b'')
+
+    # add data to padded array
+    mat_arr[:orig_length] = np.array(arr)
+    
+    return mat_arr
 
 def pad_structural_info(
-    pdb,
-    atom_names,
-    elements,
-    res_ids,
-    coords,
-    sasas,
-    charges,
+    ragged_structure,
     padded_length=100
 ):
-     
-    mat_atom_names = np.empty([padded_length], dtype="S4")
-    mat_atom_names.fill(b'')
-    mat_elements = np.empty([padded_length], dtype="S1")
-    mat_elements.fill(b'')
-    mat_res_ids = np.empty([padded_length,5], dtype="S5")
-    mat_res_ids.fill(b'')
-    mat_coords = np.zeros([padded_length,3], dtype=float)
-    mat_charges = np.zeros([padded_length], dtype=float)
-    mat_sasas = np.zeros([padded_length], dtype=float)
     
+    
+    pad_custom = partial(pad,padded_length=padded_length)
+    
+    mat_structure = list(map(pad_custom,ragged_structure))
 
-    mat_atom_names[:len(atom_names)] = np.array(atom_names,dtype='S4')
-    mat_elements[:len(elements)] = np.array(elements,dtype='S1')
-    mat_charges[:len(charges)] = np.array(charges)
-    mat_coords[:len(coords),:] = np.array(coords)
-    mat_res_ids[:len(res_ids)] = np.array(res_ids,dtype='S5')
-    mat_sasas[:len(sasas)] = np.array(sasas)
-
-    return pdb,mat_atom_names,mat_elements,mat_res_ids,mat_coords,mat_charges,mat_sasas
+    return mat_structure
