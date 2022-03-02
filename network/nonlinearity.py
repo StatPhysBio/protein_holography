@@ -25,7 +25,7 @@ class Nonlinearity(tf.keras.layers.Layer):
         for L in range(self.L_MAX + 1):
             output[L] = []
 
-        # take products between all possible Ls and channels
+#         # take products between all possible Ls and channels
 #         for l1 in range(self.L_MAX + 1):
 #             for l2 in range(l1,self.L_MAX + 1):
 #                 for L in range(l2-l1,np.minimum(self.L_MAX,l1+l2) + 1):
