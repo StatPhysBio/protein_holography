@@ -23,8 +23,10 @@ import sys
 sys.path.append('/premiumproteindatadrive/protein_holography/utils')
 from posterity import get_metadata,record_metadata
 import atexit
+import subprocess
 
 def main():
+    print('Arg 0 is : ',sys.argv[0],'\n\n')
     singular_pdbs = [b'3A0M', b'1AW8', b'3JQH', b'3NIR', b'3O2R', b'3O2R', b'1GTV', b'2W8S', b'3JQH', b'3NIR', b'4AON', b'3L4J', b'2HAL', b'2ZS0', b'2W8S', b'3L4J', b'4BY8', b'4AON', b'2HAL', b'1GTV', b'2ZS0', b'1AW8', b'3A0M', b'4BY8',b'2J6V']
 
     aa_to_one_letter = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E',
@@ -327,6 +329,7 @@ def main():
         )
         good_idxs = np.setdiff1d(np.arange(total_ids,dtype=int),bad_idxs)
 
+    np.random.seed(0)
     np.random.shuffle(good_idxs)
     subset = good_idxs[:max_val]
 
@@ -459,7 +462,7 @@ def main():
                 validation_data=val_dg,
                 epochs=300,
                 verbose = args.verbosity,
-                max_queue_size=1000,
+                max_queue_size=900,
                 steps_per_epoch=1000,
                 callbacks=[
                     model_checkpoint_callback,
@@ -473,8 +476,21 @@ def main():
             history.history,
             allow_pickle=True)
     print('Done saving')
+    
+    print('Killing subprocesses to free up GPU and end python subprocesses')
+    
 
-
+    python_procs = subprocess.Popen( "ps aux | grep python",
+                                     stdin=subprocess.PIPE, shell=True, stdout=subprocess.PIPE )
+    output = python_procs.stdout.read()
+    lookatme = [o.split() for o in output.split(b'\n')]
+    for proc in lookatme[::-1]:
+        if len(proc) < 13:
+            continue
+        if proc[12] == sys.argv[0].encode():
+            os.kill(int(proc[1].decode('utf-8')), 9)
+    print('Done killing subprocesses')
+    
 if __name__ == "__main__":
     main()
     sys.exit()
