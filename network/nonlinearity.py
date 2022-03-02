@@ -14,11 +14,12 @@ import numpy as np
 
 class Nonlinearity(tf.keras.layers.Layer):
 
-    def __init__(self, L_MAX, cg_matrices, **kwargs):
+    def __init__(self, L_MAX, cg_matrices, out_L_max=None, **kwargs):
         super().__init__(**kwargs)
         self.L_MAX = L_MAX
         self.cg_matrices = cg_matrices
-
+        self.out_L_max = out_L_max
+        
     @tf.function
     def call(self, input,training=None):
         output = {}
@@ -51,6 +52,21 @@ class Nonlinearity(tf.keras.layers.Layer):
 
         for L in range(self.L_MAX + 1):
             output[L] = tf.concat(output[L],axis=1)
+            
+        if self.out_L_max != None:
+            for L in range(self.out_L_max + 1):
+                output[L] = []
+            # # take products between only self squares
+            for l1 in range(self.L_MAX + 1):
+                l2 = l1
+                for L in range(l2-l1,np.minimum(self.out_L_max+1,l1+l2+1)):
+                    product = tf.einsum('Mnm,bim,bin->biM',
+                                        self.cg_matrices[(L,l2,l1)],input[l1],input[l2])
+                    batch_size = -1
+                    output[L].append(product)
+                    
+            for L in range(self.out_L_max + 1):
+                output[L] = tf.concat(output[L],axis=1)
         return output
 
 
