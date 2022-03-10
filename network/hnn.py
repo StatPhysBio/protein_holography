@@ -54,18 +54,32 @@ class hnn(tf.keras.Model):
                 temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
             temp_layers.append(nonlinearity.Nonlinearity(curr_L_MAX, self.cg_matrices))
 #            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
-        for i in range(num_dense_layers):
-            temp_layers.append(
-                tf.keras.layers.Dropout(dropout_rate)
-            )
-            temp_layers.append(
-                tf.keras.layers.Dense(
-                    num_classes,
-                    kernel_initializer=tf.keras.initializers.Orthogonal(),
-                    bias_initializer=tf.keras.initializers.GlorotUniform(),
-                    kernel_regularizer=tf.keras.regularizers.l1(reg_strength),                    
+        if num_dense_layers > 1:
+            dense_layer_hdims = np.linspace(500,5000,num_dense_layers-1,dtype=int)
+            for i in range(num_dense_layers-1):
+                temp_layers.append(
+                    tf.keras.layers.Dropout(dropout_rate)
                 )
+                temp_layers.append(
+                    tf.keras.layers.Dense(
+                        dense_layer_hdims[-i],
+                        kernel_initializer=tf.keras.initializers.Orthogonal(),
+                        bias_initializer=tf.keras.initializers.GlorotUniform(),
+                        kernel_regularizer=tf.keras.regularizers.l1(reg_strength),                 
+                    )
+                )
+        temp_layers.append(
+            tf.keras.layers.Dropout(dropout_rate)
+        )
+        temp_layers.append(
+            tf.keras.layers.Dense(
+                num_classes,
+                kernel_initializer=tf.keras.initializers.Orthogonal(),
+                bias_initializer=tf.keras.initializers.GlorotUniform(),
+                kernel_regularizer=tf.keras.regularizers.l1(reg_strength),                 
             )
+        )
+        
         print(temp_layers)
         # assignment of layers to a class feature
         self.layers_ = temp_layers
@@ -109,11 +123,12 @@ class hnn(tf.keras.Model):
         scalar_output = tf.concat(scalar_output,axis=1)
         scalar_out_real = tf.math.real(scalar_output)
         scalar_out_imag = tf.math.imag(scalar_output)
-        scalar_output = tf.squeeze(
-                            tf.concat([scalar_out_real,scalar_out_imag], axis=1), axis=-1
-                        )
+        scalar_output = tf.squeeze(scalar_out_real,axis=-1)
+        #scalar_output = tf.squeeze(
+        #                    tf.concat([scalar_out_real,scalar_out_imag], axis=1), axis=-1
+        #                )
         #scalar_output = tf.concat([scalar_out_real,scalar_out_imag], axis=1)
-
+        
         # feed scalar output into dense layer
         for i in range(self.num_dense_layers*2):
             scalar_output = self.layers_[-2*self.num_dense_layers+i](scalar_output)

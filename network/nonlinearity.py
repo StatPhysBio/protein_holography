@@ -4,7 +4,7 @@
 # L:ayer takes inputs g^i of shape l x c(l,i) x m(l) and produces all squares
 # in the irreducible basis via the Clebsch_Gordan coefficients
 #
-# In Einstein notation, this layer is summarized by the equation
+0;95;0c# In Einstein notation, this layer is summarized by the equation
 #
 #     f^{i}_{l,c(l,i),m(l)} = C^{l,m(l)}_{l_1,m_1(l_1),l_2,m_2(l_2)}
 #
@@ -19,7 +19,9 @@ class Nonlinearity(tf.keras.layers.Layer):
         self.L_MAX = L_MAX
         self.cg_matrices = cg_matrices
         self.out_L_max = out_L_max
-        
+        self.relu = tf.keras.layers.LeakyReLU(
+            alpha=0.3, **kwargs
+        )
     @tf.function
     def call(self, input,training=None):
         output = {}
@@ -43,6 +45,12 @@ class Nonlinearity(tf.keras.layers.Layer):
 
         # # take products between only self squares
         for l1 in range(self.L_MAX + 1):
+            if l1 == 0:
+                L = 0
+                product = input[l1] * tf.cast(self.relu(tf.abs(input[l1])),tf.complex64)
+                batch_size = -1
+                output[L].append(product)
+                continue
             l2 = l1
             for L in range(l2-l1,np.minimum(self.L_MAX+1,l1+l2+1)):
                 product = tf.einsum('Mnm,bim,bin->biM',
@@ -53,20 +61,20 @@ class Nonlinearity(tf.keras.layers.Layer):
         for L in range(self.L_MAX + 1):
             output[L] = tf.concat(output[L],axis=1)
             
-        if self.out_L_max != None:
-            for L in range(self.out_L_max + 1):
-                output[L] = []
-            # # take products between only self squares
-            for l1 in range(self.L_MAX + 1):
-                l2 = l1
-                for L in range(l2-l1,np.minimum(self.out_L_max+1,l1+l2+1)):
-                    product = tf.einsum('Mnm,bim,bin->biM',
-                                        self.cg_matrices[(L,l2,l1)],input[l1],input[l2])
-                    batch_size = -1
-                    output[L].append(product)
+        # if self.out_L_max != None:
+        #     for L in range(self.out_L_max + 1):
+        #         output[L] = []
+        #     # # take products between only self squares
+        #     for l1 in range(self.L_MAX + 1):
+        #         l2 = l1
+        #         for L in range(l2-l1,np.minimum(self.out_L_max+1,l1+l2+1)):
+        #             product = tf.einsum('Mnm,bim,bin->biM',
+        #                                 self.cg_matrices[(L,l2,l1)],input[l1],input[l2])
+        #             batch_size = -1
+        #             output[L].append(product)
                     
-            for L in range(self.out_L_max + 1):
-                output[L] = tf.concat(output[L],axis=1)
+        #     for L in range(self.out_L_max + 1):
+        #         output[L] = tf.concat(output[L],axis=1)
         return output
 
 
