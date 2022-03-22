@@ -184,6 +184,12 @@ def main():
                         nargs='+',
                         default=None,
                         help='scale for rescaling inputs')
+    parser.add_argument('--connection',
+                        dest='connection',
+                        type=str,
+                        nargs='+',
+                        default=None,
+                        help='type of connection for the nonlinearity')
     parser.add_argument('--dropout',
                         dest='dropout_rate',
                         type=float,
@@ -356,7 +362,7 @@ def main():
     network = hnn.hnn(
         args.netL[0], hidden_l_dims, nlayers, n_classes,
         tf_cg_matrices, args.n_dense[0], 
-        args.reg_strength[0], args.dropout_rate[0], args.scale[0])
+        args.reg_strength[0], args.dropout_rate[0], args.scale[0], args.connection[0])
 
 
     @tf.function

@@ -17,7 +17,7 @@ class hnn(tf.keras.Model):
     
     def __init__(self, L_MAX, hidden_l_dims, num_layers,
                  num_classes, cg_matrices, num_dense_layers,
-                 reg_strength, dropout_rate, scale, **kwargs):
+                 reg_strength, dropout_rate, scale, connection, **kwargs):
         print('hnn n classes = {}'.format(num_classes))
         # call to the super function tf.keras.Model
         super().__init__(**kwargs)
@@ -52,7 +52,7 @@ class hnn(tf.keras.Model):
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, curr_L_MAX,
                                                        reg_strength))
                 temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
-            temp_layers.append(nonlinearity.Nonlinearity(curr_L_MAX, self.cg_matrices))
+            temp_layers.append(nonlinearity.Nonlinearity(curr_L_MAX, self.cg_matrices, connection))
 #            temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
         if num_dense_layers > 1:
             dense_layer_hdims = np.linspace(500,5000,num_dense_layers-1,dtype=int)
