@@ -22,11 +22,11 @@ import logging
 from progress.bar import Bar
 import traceback
 
-def c(np_protein):
+def c(np_protein,r_max):
 
     try:
-        neighborhoods = get_neighborhoods_from_protein(np_protein)
-        padded_neighborhoods = pad_neighborhoods(neighborhoods,padded_length=1000)
+        neighborhoods = get_neighborhoods_from_protein(np_protein,r_max)
+        padded_neighborhoods = pad_neighborhoods(neighborhoods,padded_length=5000)
     except Exception as e:
         print(e)
         print('Error with',np_protein[0])
@@ -47,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
     parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
     parser.add_argument('--num_nhs', dest='num_nhs', type=int, help='number of neighborhoods in protein set')
+    parser.add_argument('--r_max', dest='r_max', type=float, help='radius of neighborhood')
     
     args = parser.parse_args()
     
@@ -60,12 +61,12 @@ if __name__ == "__main__":
     n = 0
 
 
-    max_atoms = 1000
+    max_atoms = 5000
     dt = np.dtype([
-        ('res_id','S5',(5)),
+        ('res_id','S5',(6)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,5)),
+        ('res_ids', 'S5', (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),
@@ -78,13 +79,13 @@ if __name__ == "__main__":
                          shape=(args.num_nhs,),
                          dtype=dt)
     print('calling parallel process')
-    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(5)))
+    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(6)))
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(args.hdf5_out,'r+') as f:
             for i,neighborhoods in enumerate(ds.execute(
                     c,
                     limit = None,
-                    params = {},
+                    params = {'r_max': args.r_max},
                     parallelism = args.parallelism)):
                 if neighborhoods[0] is None:
                     bar.next()

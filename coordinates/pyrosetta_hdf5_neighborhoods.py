@@ -12,19 +12,63 @@ def slice_array(arr,inds):
 def get_neighborhoods(neighbor_inds,npProtein):
     return list(map(partial(slice_array,inds=neighbor_inds),npProtein))
 
+def get_unique_chains(protein):
 
-def get_neighborhoods_from_protein(np_protein):
+    valid_res_types = [b'A', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'K', b'L',
+                       b'M', b'N', b'P', b'Q', b'R', b'S', b'T', b'V', b'W', b'Y']
+
+    # get sequences and chain sequences
+    seq = protein[:,0][
+        np.logical_or.reduce([protein[:,0] == x for x in valid_res_types])
+    ]
+    chain_seq = protein[:,2][
+        np.logical_or.reduce([protein[:,0] == x for x in valid_res_types])
+    ]
+
+    # get chains and associated residue sequences
+    chain_seqs = {}
+    for c in np.unique(chain_seq):
+        chain_seqs[c] = b''.join(seq[chain_seq == c])
+    
+    # cluster chains by matching residue sequences
+    chain_matches = {}
+    for c1 in chain_seqs.keys():
+        for c2 in chain_seqs.keys():
+            chain_matches[(c1,c2)] = chain_seqs[c1] == chain_seqs[c2]
+            
+    unique_chains = []
+    unique_chain_seqs = []
+    for chain in chain_seqs.keys():
+        if chain_seqs[chain] not in unique_chain_seqs:
+            unique_chains.append(chain)
+            unique_chain_seqs.append(chain_seqs[chain])
+
+    return unique_chains
+
+
+def get_neighborhoods_from_protein(np_protein,r_max=10.):
+    
     atom_names = np_protein['atom_names']
     real_locs = (atom_names != b'')
+    chains = np_protein['res_ids'][real_locs][:,2]
     atom_names = atom_names[real_locs]
     coords = np_protein['coords'][real_locs]
+    unique_chains = get_unique_chains(np_protein['res_ids'])
     ca_locs = (atom_names == b' CA ')
+    nonduplicate_chain_locs = np.logical_or.reduce(
+        [chains == x for x in unique_chains]
+        )
+    ca_locs = np.logical_and(
+        ca_locs,
+        nonduplicate_chain_locs
+    )
+
     #ca_inds = np.squeeze(np.argwhere(atom_names == b' CA '))
     ca_coords = coords[ca_locs]
     ca_res_ids = np_protein['res_ids'][real_locs][ca_locs]
     tree = KDTree(coords,leaf_size=2)
     nh_ids = np_protein[3][real_locs][ca_locs]
-    neighbors_list = tree.query_radius(ca_coords, r=10., count_only=False)
+    neighbors_list = tree.query_radius(ca_coords, r=r_max, count_only=False)
     get_neighbors_custom = partial(
         get_neighborhoods,                          
         npProtein=[np_protein[x] for x in range(1,7)]
