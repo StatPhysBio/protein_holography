@@ -14,28 +14,25 @@ from Bio.PDB.mmtf import MMTFParser
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 import h5py
 import sys
-
+from tqdm import tqdm
 
 
 
 def process_data(ind,hdf5_file,protein_list):
     assert(process_data.callback)
-    with semaphore:
-        with h5py.File(hdf5_file,'r') as f:
-            semaphore.acquire()
-            protein = f[protein_list][ind]
-            #print('loaded protein',protein[0])
+
+    with h5py.File(hdf5_file,'r') as f:
+        protein = f[protein_list][ind]
+        #print('loaded protein',protein[0])
     return process_data.callback(protein, **process_data.params)
 
-def initializer(init, callback, params, init_params, sem):
+def initializer(init, callback, params, init_params):
     if init is not None:
         init(**init_params)
     process_data.callback = callback
     process_data.params = params
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    global semaphore
-    semaphore = sem
         
 class PDBPreprocessor:
     def __init__(self, hdf5_file, protein_list ):
@@ -47,20 +44,21 @@ class PDBPreprocessor:
         self.hdf5_file = hdf5_file
         self.size = num_proteins
         self.__data = np.arange(num_proteins)
+
         print(self.size)
         print(self.hdf5_file)
         
     def count(self):
         return len(self.__data)
 
-    def execute(self, callback, parallelism = 8, semaphore = None, limit = None, params = None, init = None, init_params = None):
+    def execute(self, callback, parallelism = 8, limit = None, params = None, init = None, init_params = None):
         if limit is None:
             data = self.__data
         else:
             data = self.__data[:limit]
         with Pool(initializer = initializer,
                   processes=parallelism,
-                  initargs = (init, callback, params, init_params, semaphore)) as pool:
+                  initargs = (init, callback, params, init_params)) as pool:
 
     
             all_loaded = True
@@ -69,10 +67,12 @@ class PDBPreprocessor:
                 pass
             else:
                 raise Exception("Some PDB files could not be loaded.")
+
+
             process_data_hdf5 = functools.partial(
                 process_data,
-                hdf5_file=self.hdf5_file,
-                protein_list=self.protein_list,
+                hdf5_file = self.hdf5_file,
+                protein_list = self.protein_list
             )
             ntasks = self.size
             num_cpus = os.cpu_count()
@@ -81,7 +81,7 @@ class PDBPreprocessor:
 
             if chunksize > 16:
                 chunksize = 4
-            for res in pool.imap(process_data_hdf5, data, chunksize=chunksize):
-                if res:
-                    yield res
+            for res in pool.imap(process_data_hdf5, tqdm(data,total=len(data)), chunksize=chunksize):
+                #if res:
+                yield res
 
