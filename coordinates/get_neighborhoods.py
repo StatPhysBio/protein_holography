@@ -23,11 +23,11 @@ from progress.bar import Bar
 import traceback
 from tqdm import tqdm
 
-def c(np_protein,r_max,padded_length):
+def c(np_protein,r_max,padded_length,unique_chains):
 
     try:
         assert True
-        neighborhoods = get_neighborhoods_from_protein(np_protein,r_max)
+        neighborhoods = get_neighborhoods_from_protein(np_protein,r_max,uc=unique_chains)
         padded_neighborhoods = pad_neighborhoods(neighborhoods,padded_length=padded_length)
         del neighborhoods
     except Exception as e:
@@ -51,6 +51,7 @@ if __name__ == "__main__":
     parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
     parser.add_argument('--num_nhs', dest='num_nhs', type=int, help='number of neighborhoods in protein set')
     parser.add_argument('--r_max', dest='r_max', type=float, help='radius of neighborhood')
+    parser.add_argument('--unique_chains', dest='unique_chains', type=bool, default=True, help='Only take one neighborhood per residue per unique chain')
     
     args = parser.parse_args()
     
@@ -90,7 +91,8 @@ if __name__ == "__main__":
                     limit = None,
                     params = {
                         'r_max': args.r_max,
-                        'padded_length' : max_atoms      
+                        'padded_length' : max_atoms,
+                        'unique_chains': args.unique_chains
                     },
                     parallelism = args.parallelism)):
                 if neighborhoods[0] is None:
@@ -99,23 +101,14 @@ if __name__ == "__main__":
                     #n+=1
                     continue
                 
-                #print(neighborhoods.dtype)
-                #print(neighborhoods.shape)
+                
                 neighborhoods_per_protein = neighborhoods.shape[0]
                 
                 f[args.protein_list][n:n+neighborhoods_per_protein] = neighborhoods
                 nhs[n:n+neighborhoods_per_protein] = neighborhoods['res_id']
                 n+=neighborhoods_per_protein
-                #for neighborhood in neighborhoods:
-                #    nhs[n] = neighborhood[0]
-                #    f[args.protein_list][n] = (*neighborhood,)
-                #    n+=1
-                #f[args.protein_list][n] = (*neighborhoods[0],)
-                #n+=1
                 
                 del neighborhoods
-                #print(neighborhoods[0][0])
-                #print('done writing. \n moving to next entry')
                 bar.next()
 
                 

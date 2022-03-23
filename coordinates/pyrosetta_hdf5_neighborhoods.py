@@ -46,22 +46,23 @@ def get_unique_chains(protein):
     return unique_chains
 
 
-def get_neighborhoods_from_protein(np_protein,r_max=10.):
+def get_neighborhoods_from_protein(np_protein,r_max=10.,uc=True):
     
     atom_names = np_protein['atom_names']
     real_locs = (atom_names != b'')
-    chains = np_protein['res_ids'][real_locs][:,2]
     atom_names = atom_names[real_locs]
     coords = np_protein['coords'][real_locs]
-    unique_chains = get_unique_chains(np_protein['res_ids'])
     ca_locs = (atom_names == b' CA ')
-    nonduplicate_chain_locs = np.logical_or.reduce(
-        [chains == x for x in unique_chains]
+    if uc:
+        chains = np_protein['res_ids'][real_locs][:,2]
+        unique_chains = get_unique_chains(np_protein['res_ids'])
+        nonduplicate_chain_locs = np.logical_or.reduce(
+            [chains == x for x in unique_chains]
         )
-    ca_locs = np.logical_and(
-        ca_locs,
-        nonduplicate_chain_locs
-    )
+        ca_locs = np.logical_and(
+            ca_locs,
+            nonduplicate_chain_locs
+        )
 
     #ca_inds = np.squeeze(np.argwhere(atom_names == b' CA '))
     ca_coords = coords[ca_locs]
@@ -70,7 +71,7 @@ def get_neighborhoods_from_protein(np_protein,r_max=10.):
     nh_ids = np_protein[3][real_locs][ca_locs]
     neighbors_list = tree.query_radius(ca_coords, r=r_max, count_only=False)
     get_neighbors_custom = partial(
-        get_neighborhoods,                          
+
         npProtein=[np_protein[x] for x in range(1,7)]
     )
     res_ids = np_protein[3][real_locs]
