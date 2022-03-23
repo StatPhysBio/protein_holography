@@ -45,7 +45,8 @@ def calculate_sasa(
 def get_structural_info(
     pose
 ):
-    
+    DSSP = pyrosetta.rosetta.protocols.moves.DsspMover()
+    DSSP.apply(pose)
     # lists for each type of information to obtain
     atom_names = []
     elements = []
@@ -65,21 +66,23 @@ def get_structural_info(
     
     # get structural info from each residue in the protein
     for i in range(1,pose.size()+1):
+        ss = pose.secstruct(i)
+        aa = pose.sequence()[i-1]
+        chain = pi.chain(i)
+        resnum = str(pi.number(i)).encode()
+        icode = pi.icode(i).encode()
         for j in range(1,len(pose.residue(i).atoms())+1):
+
             atom_name = pose.residue_type(i).atom_name(j)
             idx = pose.residue(i).atom_index(atom_name)
             atom_id = (pyrosetta.rosetta.core.id.AtomID(idx,i))
             element = pose.residue_type(i).element(j).name
-            aa = pose.sequence()[i-1]
-            chain = pi.chain(i)
-            resnum = str(pi.number(i)).encode()
-            icode = pi.icode(i).encode()
             sasa = atom_sasa.get(atom_id)
             curr_coords = coords_rows[k]
             charge = pose.residue_type(i).atom_charge(j)
 
             
-            res_id =np.array([aa,pdb,chain,resnum,icode],dtype='S5')
+            res_id =np.array([aa,pdb,chain,resnum,icode,ss],dtype='S5')
             
             atom_names.append(atom_name)
             elements.append(element)
