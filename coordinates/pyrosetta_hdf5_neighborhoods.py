@@ -129,14 +129,35 @@ def pad(arr,padded_length=100):
     return mat_arr
 
 def pad_neighborhood(
+        res_id,
     ragged_structure,
     padded_length=100
 ):
     
     
     pad_custom = partial(pad,padded_length=padded_length)
-    
-    mat_structure = list(map(pad_custom,ragged_structure))
+
+    max_atoms=padded_length
+    dt = np.dtype([
+        ('res_id', 'S5', (6)),
+        ('atom_names', 'S4', (max_atoms)),
+        ('elements', 'S1', (max_atoms)),
+        ('res_ids', 'S5', (max_atoms,6)),
+        ('coords', 'f8', (max_atoms,3)),
+        ('SASAs', 'f8', (max_atoms)),
+        ('charges', 'f8', (max_atoms)),
+    ])
+
+    mat_structure = np.empty(dtype=dt,shape=())
+    padded_list = list(map(pad_custom,ragged_structure))
+    mat_structure['res_id'] = res_id
+    for i,val in enumerate(dt.names[1:]):
+        # print(i,val)
+        # print(padded_list[i].shape)
+        # print(mat_structure.shape)
+        # print(mat_structure[0].shape)
+        # print(mat_structure[0][val].shape)
+        mat_structure[val] = padded_list[i]
 
     return mat_structure
 
@@ -149,9 +170,13 @@ def pad_neighborhoods(
         #print('Zeroeth entry',i,neighborhood[0])
         padded_neighborhoods.append(
             pad_neighborhood(
+                neighborhood[0],
                 [neighborhood[i] for i in range(1,7)],
                 padded_length=padded_length
             )
         )
-    [padded_neighborhood.insert(0,nh[0]) for nh,padded_neighborhood in zip(neighborhoods,padded_neighborhoods)]
+    
+    #[padded_neighborhood.insert(0,nh[0]) for nh,padded_neighborhood in zip(neighborhoods,padded_neighborhoods)]
+    #[padded_neighborhood['res_id'] = nh[0] for nh,padded_neighborhood in zip(neighborhoods,padded_neighborhoods)]
+    padded_neighborhoods = np.array(padded_neighborhoods,dtype=padded_neighborhoods[0].dtype)
     return padded_neighborhoods

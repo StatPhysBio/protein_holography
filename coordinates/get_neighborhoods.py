@@ -21,18 +21,21 @@ from posterity import get_metadata,record_metadata
 import logging
 from progress.bar import Bar
 import traceback
-from threading import Semaphore
+from tqdm import tqdm
+
 def c(np_protein,r_max,padded_length):
 
     try:
+        assert True
         neighborhoods = get_neighborhoods_from_protein(np_protein,r_max)
         padded_neighborhoods = pad_neighborhoods(neighborhoods,padded_length=padded_length)
+        del neighborhoods
     except Exception as e:
         print(e)
         print('Error with',np_protein[0])
         #print(traceback.format_exc())
         return (None,)
-
+    #padded_neighborhoods = None
  
 
 
@@ -54,14 +57,14 @@ if __name__ == "__main__":
     # get metadata
     metadata = get_metadata()
 
-    semaphore = Semaphore(100)
+
     logging.basicConfig(level=logging.DEBUG)
     ds = PDBPreprocessor(args.hdf5_in,args.protein_list)
     bad_neighborhoods = []
     n = 0
 
 
-    max_atoms = 1000
+    max_atoms = 1700
     dt = np.dtype([
         ('res_id','S5',(6)),
         ('atom_names', 'S4', (max_atoms)),
@@ -85,27 +88,36 @@ if __name__ == "__main__":
             for i,neighborhoods in enumerate(ds.execute(
                     c,
                     limit = None,
-                    semaphore=semaphore,
                     params = {
                         'r_max': args.r_max,
                         'padded_length' : max_atoms      
                     },
                     parallelism = args.parallelism)):
                 if neighborhoods[0] is None:
+                    del neighborhoods
                     bar.next()
-                    semaphore.release()
                     #n+=1
                     continue
                 
-                #print([neighborhoods[j][0] for j in range(10)])
-                for neighborhood in neighborhoods:
-                    nhs[n] = neighborhood[0]
-                    f[args.protein_list][n] = (*neighborhood,)
-                    n+=1
+                #print(neighborhoods.dtype)
+                #print(neighborhoods.shape)
+                neighborhoods_per_protein = neighborhoods.shape[0]
+                
+                f[args.protein_list][n:n+neighborhoods_per_protein] = neighborhoods
+                nhs[n:n+neighborhoods_per_protein] = neighborhoods['res_id']
+                n+=neighborhoods_per_protein
+                #for neighborhood in neighborhoods:
+                #    nhs[n] = neighborhood[0]
+                #    f[args.protein_list][n] = (*neighborhood,)
+                #    n+=1
+                #f[args.protein_list][n] = (*neighborhoods[0],)
+                #n+=1
+                
+                del neighborhoods
                 #print(neighborhoods[0][0])
                 #print('done writing. \n moving to next entry')
                 bar.next()
-                semaphore.release()
+
                 
     print(len(nhs))
     with h5py.File(args.hdf5_out,'r+') as f:
