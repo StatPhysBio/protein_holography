@@ -66,7 +66,7 @@ if __name__ == "__main__":
         ('pdb','S4',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,5)),
+        ('res_ids', 'S5', (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),
