@@ -71,7 +71,7 @@ def get_neighborhoods_from_protein(np_protein,r_max=10.,uc=True):
     nh_ids = np_protein[3][real_locs][ca_locs]
     neighbors_list = tree.query_radius(ca_coords, r=r_max, count_only=False)
     get_neighbors_custom = partial(
-
+        get_neighborhoods,
         npProtein=[np_protein[x] for x in range(1,7)]
     )
     res_ids = np_protein[3][real_locs]
