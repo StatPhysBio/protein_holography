@@ -7,11 +7,7 @@ import os
 os.sys.path.append('/gscratch/spe/mpun/protein_holography/fourier')
 
 def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
-    
-#     # check input dimensions of arrays
-#     if (np.array(r).shape != np.array(t).shape or
-#         np.array(t).shape != np.array(p).shape):
-#         print('Error: input arrays do not have same shape')
+    print('here')
 
     # dimension of the Zernike polynomial
     D = 3.
@@ -22,8 +18,13 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
     C = sp.special.binom((n+l+D) // 2 - 1,
                          (n-l) // 2)
 
+    print(n)
+    print(l)
+    print(m)
+    
     nl_unique_combs, nl_inv_map = np.unique(np.vstack([n, l]).T, axis=0,
                                             return_inverse=True)
+    print(nl_unique_combs)
     num_nl_combs = nl_unique_combs.shape[0]
     n_hyp2f1_tile = np.tile(nl_unique_combs[:, 0], (r.shape[1], 1)).T
     l_hyp2f1_tile = np.tile(nl_unique_combs[:, 1], (r.shape[1], 1)).T
@@ -50,7 +51,7 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
     y_unique = np.conj(sp.special.sph_harm(m_sph_harm_tile, l_sph_harm_tile,
                                            p[:num_lm_combs], t[:num_lm_combs]))
     y = y_unique[lm_inv_map]
-    
+    print(lm_inv_map)
     if True in np.isinf(E):
         print('Error: E is inf')
         print('E',E)
@@ -62,7 +63,8 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
 
     # assemble coefficients
     #print(weights.shape,E.shape,F.shape,y.shape)
-    coeffs = A * B * C * np.einsum('N,nN,nN,nN->n', weights, E, F, y)
+    # n indexes the combinations of n,l,m and N indexes the points in the point cloud
+    coeffs = A * B * C * np.einsum('cN,nN,nN,nN->cn', weights, E, F, y)
 
     return coeffs
 
@@ -104,53 +106,49 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     nonzero_len = np.count_nonzero(nonzero_idxs)
     nmax = len(ks)
 
-
+    arr_weights = np.empty(shape=(7,r.shape[-1],))
     for i_ch,ch in enumerate(channels):
 
+
+        r,t,p = np.einsum('ij->ji',atom_coords)
         if ch == 'C':
-            r,t,p = *atom_coords[elements == b'C'].T,
-            weights=np.ones(shape=(r.shape[-1],))
+            weights=np.array(elements == b'C',dtype=float)
         if ch == 'N':
-            r,t,p = *atom_coords[elements == b'N'].T,
-            weights=np.ones(shape=(r.shape[-1],))
+            weights=np.array(elements == b'N',dtype=float)
         if ch == 'O':
-            r,t,p = *atom_coords[elements == b'O'].T,
-            weights=np.ones(shape=(r.shape[-1],))
+            weights=np.array(elements == b'O',dtype=float)
         if ch == 'S':
-            r,t,p = *atom_coords[elements == b'S'].T,
-            weights=np.ones(shape=(r.shape[-1],))
+            weights=np.array(elements == b'S',dtype=float)
         if ch == 'H':
-            r,t,p = *atom_coords[elements == b'H'].T,
-            weights=np.ones(shape=(r.shape[-1],))
+            weights=np.array(elements == b'H',dtype=float)
         if ch == 'SASA':
             weights = curr_SASA
-            r,t,p = np.einsum('ij->ji',atom_coords)
-            #print(weights)
         if ch == 'charge':
-            r,t,p = np.einsum('ij->ji',atom_coords)
             weights = curr_charge
+            
+        arr_weights[i_ch] = weights
+    ch_num = len(channels)
+    out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
 
-        out_z = np.zeros(shape=ns.shape[0], dtype=np.complex64)
-
-        rs = np.tile(r, (nonzero_len, 1))
-        ts = np.tile(t, (nonzero_len, 1))
-        ps = np.tile(p, (nonzero_len, 1))
+    rs = np.tile(r, (nonzero_len, 1))
+    ts = np.tile(t, (nonzero_len, 1))
+    ps = np.tile(p, (nonzero_len, 1))
 
         
-        out_z[nonzero_idxs] = zernike_coeff_lm_new(rs, ts, ps, ns[nonzero_idxs],
+    out_z[:,nonzero_idxs] = zernike_coeff_lm_new(rs, ts, ps, ns[nonzero_idxs],
                                                    10.0, ls[nonzero_idxs], ms[nonzero_idxs],
-                                                   weights)
-    
+                                                   arr_weights)
+    #return out_z
         
         
-        low_idx = 0
-        for l in range(L_max + 1):
-            num_m = (2 * l + 1)
-            high_idx = (nmax) * num_m  + low_idx
-            arr[0][l][i_ch*nmax:(i_ch+1)*nmax,:] = out_z[low_idx:high_idx].reshape(nmax, num_m, )
-            low_idx = high_idx
-
-            #arr[0][l][i_ch + n*num_channels,:] = 
+    low_idx = 0
+    for l in range(L_max + 1):
+        num_m = (2 * l + 1)
+        high_idx = (nmax) * num_m  + low_idx
+        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*ch_num, num_m, )
+        low_idx = high_idx
+        
+        
             
     return arr[0]
     
