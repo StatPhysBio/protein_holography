@@ -21,11 +21,11 @@ def c(np_nh,L_max,ks,num_combi_channels,r_max):
     #    #print(traceback.format_exc())
     #    return (None,)
     
- 
+    
 
 
     
-    return hgm
+    return hgm,np_nh['res_id']
 
 
 if __name__ == "__main__":
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                          shape=(args.num_nhs,),
                          dtype=dt)
     print('calling parallel process')
-    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(5)))
+    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(6)))
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(args.hdf5_out,'r+') as f:
             for i,hgm in enumerate(ds.execute(
@@ -79,12 +79,12 @@ if __name__ == "__main__":
                               'num_combi_channels': num_combi_channels,
                               'r_max': args.r_max},
                     parallelism = args.parallelism)):
-                if hgm is None:
+                if hgm is None or hgm[0] is None:
                     bar.next()
                     print('error')
                     continue
-                
-                f[args.neighborhood_list][i] = hgm
+                nhs[i] = hgm[1]
+                f[args.neighborhood_list][i] = hgm[0]
                 #print(hgm[0].shape)
                 bar.next()
 
