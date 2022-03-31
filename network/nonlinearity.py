@@ -4,7 +4,7 @@
 # L:ayer takes inputs g^i of shape l x c(l,i) x m(l) and produces all squares
 # in the irreducible basis via the Clebsch_Gordan coefficients
 #
-0;95;0c# In Einstein notation, this layer is summarized by the equation
+# In Einstein notation, this layer is summarized by the equation
 #
 #     f^{i}_{l,c(l,i),m(l)} = C^{l,m(l)}_{l_1,m_1(l_1),l_2,m_2(l_2)}
 #
@@ -22,6 +22,7 @@ class Nonlinearity(tf.keras.layers.Layer):
         self.relu = tf.keras.layers.LeakyReLU(
             alpha=0.3, **kwargs
         )
+        valid_connections = ['self','self_square','simple','simply_connected','all','full','fuly_connected']
         if connection not in valid_connections:
             raise ValueError('Connection type not recognized\n',
                               'Valid connections are',valid_connections,'\n',
