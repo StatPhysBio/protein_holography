@@ -74,7 +74,8 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     channels = ['C','N','O','S','H','SASA','charge']
     num_channels = len(channels)
     atom_names = nh['atom_names']
-    real_locs = atom_names != b''
+    real_locs = np.logical_and(atom_names != b'',nh['coords'][:,0] <= r_max)
+    #real_locs = atom_names != b''
     elements = nh['elements'][real_locs]
     padded_coords = nh['coords']
     curr_SASA = nh['SASAs'][real_locs]

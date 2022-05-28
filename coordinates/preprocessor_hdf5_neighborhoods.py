@@ -74,7 +74,7 @@ class PDBPreprocessor:
             chunksize = ntasks // num_cpus + 1
             print('Data size = {}, cpus = {}, chunksize = {}'.format(ntasks,num_cpus,chunksize))
 
-            if chunksize > 16:
+            if chunksize > 100:
                 chunksize = 16
             for res in pool.imap(process_data_hdf5, data, chunksize=chunksize):
                 if res:

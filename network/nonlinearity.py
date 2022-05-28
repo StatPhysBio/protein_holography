@@ -38,15 +38,18 @@ class Nonlinearity(tf.keras.layers.Layer):
         for L in range(self.L_MAX + 1):
             output[L] = []
         
-        
-        if self.connection in self.self_square_connections:
-            # take products between all possible Ls and channels
+        print(self.connection)
+        if self.connection in self.full_connections:
+        # take products between all possible Ls and channels
             for l1 in range(self.L_MAX + 1):
                 for l2 in range(l1,self.L_MAX + 1):
+                    input_mat = tf.einsum('bim,bjn->bimjn',input[l1],input[l2])
                     for L in range(l2-l1,np.minimum(self.L_MAX,l1+l2) + 1):
-                        product = tf.einsum('Mnm,bim,bjn->bijM',
-                                            self.cg_matrices[(L,l2,l1)],input[l1],input[l2]) # no conjugation
-#                                        self.cg_matrices[(L,l2,l1)],input[l1],tf.math.conj(input[l2])) # conjugation
+                        product = tf.einsum('Mnm,bimjn->bijM',
+                                            self.cg_matrices[(L,l2,l1)],input_mat) # no conjugation
+                        # product = tf.einsum('Mnm,bim,bjn->bijM',
+                        #                     self.cg_matrices[(L,l2,l1)],input[l1],input[l2]) # no conjugation
+                    #                                        self.cg_matrices[(L,l2,l1)],input[l1],tf.math.conj(input[l2])) # conjugation
                         batch_size = -1
                         dim1 = product.shape[1]
                         dim2 = product.shape[2]
@@ -54,15 +57,15 @@ class Nonlinearity(tf.keras.layers.Layer):
 
 
 
-        if self.connection in self.full_connections:
+        if self.connection in self.self_square_connections:
             # # take products between only self squares
             for l1 in range(self.L_MAX + 1):
-                if l1 == 0:
-                    L = 0
-                    product = input[l1] * tf.cast(self.relu(tf.abs(input[l1])),tf.complex64)
-                    batch_size = -1
-                    output[L].append(product)
-                    continue
+                # if l1 == 0:
+                #     L = 0
+                #     product = input[l1] * tf.cast(self.relu(tf.abs(input[l1])),tf.complex64)
+                #     batch_size = -1
+                #     output[L].append(product)
+                #     continue
                 l2 = l1
                 for L in range(l2-l1,np.minimum(self.L_MAX+1,l1+l2+1)):
                     product = tf.einsum('Mnm,bim,bin->biM',
@@ -72,21 +75,6 @@ class Nonlinearity(tf.keras.layers.Layer):
 
         for L in range(self.L_MAX + 1):
             output[L] = tf.concat(output[L],axis=1)
-            
-        # if self.out_L_max != None:
-        #     for L in range(self.out_L_max + 1):
-        #         output[L] = []
-        #     # # take products between only self squares
-        #     for l1 in range(self.L_MAX + 1):
-        #         l2 = l1
-        #         for L in range(l2-l1,np.minimum(self.out_L_max+1,l1+l2+1)):
-        #             product = tf.einsum('Mnm,bim,bin->biM',
-        #                                 self.cg_matrices[(L,l2,l1)],input[l1],input[l2])
-        #             batch_size = -1
-        #             output[L].append(product)
-                    
-        #     for L in range(self.out_L_max + 1):
-        #         output[L] = tf.concat(output[L],axis=1)
         return output
 
 

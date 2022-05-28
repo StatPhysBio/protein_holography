@@ -140,10 +140,10 @@ def pad_neighborhood(
 
     max_atoms=padded_length
     dt = np.dtype([
-        ('res_id', 'S5', (6)),
+        ('res_id', 'S5', (7)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', 'S5', (max_atoms,7)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),

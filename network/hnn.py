@@ -12,6 +12,7 @@ import linearity
 import nonlinearity
 import spherical_batch_norm as sbn
 import numpy as np
+#import PowerNorm as pn
 
 class hnn(tf.keras.Model):
     
@@ -38,6 +39,9 @@ class hnn(tf.keras.Model):
         # number of dense layers
         self.num_dense_layers = num_dense_layers
 
+        #self.power_layer = nonlinearity.Nonlinearity(L_MAX, self.cg_matrices, 'self')
+
+        
         # create the layers
         temp_layers = []
         for i in range(num_layers):
@@ -45,10 +49,12 @@ class hnn(tf.keras.Model):
 #            curr_L_MAX = np.min([L_MAX+1,10])
             if i == 0:
 #                temp_layers.append(sbn.SphericalBatchNorm(i, self.L_MAX, scale=False))
+                #temp_layers.append(pn.PowerNorm(curr_L_MAX))
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, curr_L_MAX,
                                                        reg_strength,scale = scale))
                 temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
             else:
+                #temp_layers.append(pn.PowerNorm(curr_L_MAX))
                 temp_layers.append(linearity.Linearity(hidden_l_dims[i], i, curr_L_MAX,
                                                        reg_strength))
                 temp_layers.append(sbn.SphericalBatchNorm(i, curr_L_MAX, scale=False))
@@ -62,7 +68,7 @@ class hnn(tf.keras.Model):
                 )
                 temp_layers.append(
                     tf.keras.layers.Dense(
-                        dense_layer_hdims[-i],
+                        dense_layer_hdims[num_dense_layers-2-i],
                         kernel_initializer=tf.keras.initializers.Orthogonal(),
                         bias_initializer=tf.keras.initializers.GlorotUniform(),
                         kernel_regularizer=tf.keras.regularizers.l1(reg_strength),                 

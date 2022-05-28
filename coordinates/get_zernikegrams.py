@@ -24,11 +24,79 @@ def c(np_nh,L_max,ks,num_combi_channels,r_max):
     
 
 
-    
     return hgm,np_nh['res_id']
 
+def get_zernikegrams(
+        hdf5_in,
+        neighborhood_list,
+        num_nhs,
+        r_max,
+        Lmax,
+        ks,
+        hdf5_out,
+        parallelism    
+):
+        
+    # get metadata
+    metadata = get_metadata()
 
-if __name__ == "__main__":
+    
+    logging.basicConfig(level=logging.DEBUG)
+    ds = PDBPreprocessor(hdf5_in,neighborhood_list)
+    bad_neighborhoods = []
+    n = 0
+    channels = ['C','N','O','S','H','SASA','charge']
+    num_combi_channels = len(channels) * len(ks)
+    
+    dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(Lmax + 1)])
+
+
+
+
+    print(dt)
+    print(num_nhs)
+    print('writing hdf5 file')
+    
+    nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
+    with h5py.File(hdf5_out,'w') as f:
+        f.create_dataset(neighborhood_list,
+                         shape=(num_nhs,),
+                         dtype=dt)
+        f.create_dataset('nh_list',
+                         dtype=('S5',(6)),
+                         shape=(num_nhs,)
+        )
+    print('calling parallel process')
+
+    
+    with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
+        with h5py.File(hdf5_out,'r+') as f:
+            for i,hgm in enumerate(ds.execute(
+                    c,
+                    limit = None,
+                    params = {'L_max': Lmax,
+                              'ks':ks,
+                              'num_combi_channels': num_combi_channels,
+                              'r_max': r_max},
+                    parallelism = parallelism)):
+                if hgm is None or hgm[0] is None:
+                    bar.next()
+                    print('error')
+                    continue
+                f['nh_list'][i] = hgm[1]
+                f[neighborhood_list][i] = hgm[0]
+                #print(hgm[0].shape)
+                bar.next()
+
+    print(len(nhs))
+    #with h5py.File(hdf5_out,'r+') as f:
+    #    f.create_dataset('nh_list',
+    #                     data=nhs)
+    
+    print('Done with parallel computing')
+
+
+def main():
     parser = ArgumentParser()
     parser.add_argument('--hdf5_out', dest='hdf5_out', type=str, help='ouptut hdf5 filename', required=True)
     parser.add_argument('--neighborhood_list', dest='neighborhood_list', type=str, help='neighborhood list within hdf5_in file', required=True)
@@ -41,56 +109,16 @@ if __name__ == "__main__":
 
                         
     args = parser.parse_args()
-    
-    # get metadata
-    metadata = get_metadata()
 
-    
-    logging.basicConfig(level=logging.DEBUG)
-    ds = PDBPreprocessor(args.hdf5_in,args.neighborhood_list)
-    bad_neighborhoods = []
-    n = 0
-    channels = ['C','N','O','S','H','SASA','charge']
-    num_combi_channels = len(channels) * len(args.ks)
-    
-    dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(args.Lmax + 1)])
-
-
-
-
-    print(dt)
-    print(args.num_nhs)
-    print('writing hdf5 file')
-    
-
-    with h5py.File(args.hdf5_out,'w') as f:
-        f.create_dataset(args.neighborhood_list,
-                         shape=(args.num_nhs,),
-                         dtype=dt)
-    print('calling parallel process')
-    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(6)))
-    with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
-        with h5py.File(args.hdf5_out,'r+') as f:
-            for i,hgm in enumerate(ds.execute(
-                    c,
-                    limit = None,
-                    params = {'L_max': args.Lmax,
-                              'ks':args.ks,
-                              'num_combi_channels': num_combi_channels,
-                              'r_max': args.r_max},
-                    parallelism = args.parallelism)):
-                if hgm is None or hgm[0] is None:
-                    bar.next()
-                    print('error')
-                    continue
-                nhs[i] = hgm[1]
-                f[args.neighborhood_list][i] = hgm[0]
-                #print(hgm[0].shape)
-                bar.next()
-
-    print(len(nhs))
-    with h5py.File(args.hdf5_out,'r+') as f:
-        f.create_dataset('nh_list',
-                         data=nhs)
-    
-    print('Done with parallel computing')
+    get_zernikegrams(
+        args.hdf5_in,
+        args.neighborhood_list,
+        args.num_nhs,
+        args.r_max,
+        args.Lmax,
+        args.ks,
+        args.hdf5_out,
+        args.parallelism
+    )
+if __name__ == "__main__":
+    main()

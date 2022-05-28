@@ -21,7 +21,7 @@ from posterity import get_metadata,record_metadata
 import logging
 from progress.bar import Bar
 
-def c(pose):
+def c(pose,padded_length=200000):
 
     if pose is None:
         print('pose is none')
@@ -30,7 +30,7 @@ def c(pose):
     try:
         pdb,ragged_structural_info = get_structural_info(pose)
         mat_structural_info = pad_structural_info(
-            ragged_structural_info,padded_length=200000
+            ragged_structural_info,padded_length=padded_length
         )
     except Exception as e:
         print(e)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         ('pdb','S4',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', 'S5', (max_atoms,7)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             for i,structural_info in enumerate(ds.execute(
                     c,
                     limit = None,
-                    params = {},
+                    params = {'padded_length': max_atoms},
                     parallelism = args.parallelism)):
                 if structural_info[0] is None:
                     bar.next()

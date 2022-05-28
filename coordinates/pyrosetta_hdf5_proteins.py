@@ -71,6 +71,14 @@ def get_structural_info(
         chain = pi.chain(i)
         resnum = str(pi.number(i)).encode()
         icode = pi.icode(i).encode()
+        chi1 = b''
+        #print(aa)
+        if aa not in ['G','A','Z']:
+            try:
+                chi1 = str(pose.chi(1,i)).encode()
+            except:
+                print(pdb,aa,chain,resnum)
+                #print(chi1)
         for j in range(1,len(pose.residue(i).atoms())+1):
 
             atom_name = pose.residue_type(i).atom_name(j)
@@ -82,7 +90,7 @@ def get_structural_info(
             charge = pose.residue_type(i).atom_charge(j)
 
             
-            res_id =np.array([aa,pdb,chain,resnum,icode,ss],dtype='S5')
+            res_id =np.array([aa,pdb,chain,resnum,icode,ss,chi1],dtype='S5')
             
             atom_names.append(atom_name)
             elements.append(element)
@@ -114,7 +122,7 @@ def pad(arr,padded_length=100):
 
     # check that the padding is large enough to accomdate the data
     if padded_length < orig_length:
-        print('Error: Padded length of {}'.format(padd_length),
+        print('Error: Padded length of {}'.format(padded_length),
               'is smaller than original length of array {}'.format(orig_length))
 
     # create padded array
