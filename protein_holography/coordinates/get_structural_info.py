@@ -47,7 +47,8 @@ if __name__ == "__main__":
     parser.add_argument('--hdf5_out', dest='hdf5_out', type=str, help='ouptut hdf5 filename', required=True)
     parser.add_argument('--pdb_list', dest='pdb_list', type=str, help='pdb list within hdf5_in file', required=True)
     parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
-    parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
+    parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', required=True)
+    parser.add_argument('--pdb_dir', dest='pdb_dir', type=str, help='directory of pb files', required=True)
     
     args = parser.parse_args()
     
@@ -56,7 +57,7 @@ if __name__ == "__main__":
 
     
     logging.basicConfig(level=logging.DEBUG)
-    ds = PDBPreprocessor(args.hdf5_in,args.pdb_list)
+    ds = PDBPreprocessor(args.hdf5_in,args.pdb_list,args.pdb_dir)
     bad_neighborhoods = []
     n = 0
 
@@ -66,7 +67,7 @@ if __name__ == "__main__":
         ('pdb','S4',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,7)),
+        ('res_ids', 'S5', (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),

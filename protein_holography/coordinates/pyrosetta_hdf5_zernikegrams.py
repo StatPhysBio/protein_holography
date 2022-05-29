@@ -1,24 +1,53 @@
+from functools import partial
+import os
+
+import  h5py
+import numpy as np
 import scipy as sp
 from scipy import special
-import  h5py
-from functools import partial
-import numpy as np
-import os
 os.sys.path.append('/gscratch/spe/mpun/protein_holography/fourier')
 
-def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
+def zernike_coeff_lm_new(r: np.ndarray, t: np.ndarray, p: np.ndarray, n: np.ndarray, r_max: np.float64,
+                         l: np.ndarray, m: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    """
+    Compute Zerkinke coefficients.
+
+    This implementation uses vectorized operations and avoids unnecessary computation
+    when possible.
+
+    Parameters
+    ----------
+    r :  np.ndarray
+        Radii magnitudes.
+    t : np.ndarray
+        Theta values.
+    p :  np.ndarray
+        Phi values.
+    n :  np.ndarray
+
+    r_max : np.float64
+
+    l : np.ndarray
+
+    m :  np.ndarray
+
+    weights : np.ndarray
 
 
-    # dimension of the Zernike polynomial
+    Returns
+    -------
+    coeffs : np.ndarray
+        Zerkine coefficients.
+    """
+    # Dimension of the Zernike polynomial.
     D = 3.
-    # constituent terms in the polynomial
+
+    # Constituent terms in the polynomial.
     A = np.power(-1.0 + 0j, (n - l) / 2.)
 
-    B = np.sqrt(2.*n + D)
-    C = sp.special.binom((n+l+D) // 2 - 1,
-                         (n-l) // 2)
+    B = np.sqrt(2. * n + D)
+    C = sp.special.binom((n + l + D) // 2 - 1, (n - l) // 2)
 
-    
     nl_unique_combs, nl_inv_map = np.unique(np.vstack([n, l]).T, axis=0,
                                             return_inverse=True)
 
@@ -30,42 +59,34 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
                                  (n_hyp2f1_tile + l_hyp2f1_tile + D) /2.,
                                  l_hyp2f1_tile + D / 2.,
                                  r[:num_nl_combs, :]**2 / r_max**2)
-    #print(E_unique.shape)
     E = E_unique[nl_inv_map]
-    #print(E.shape)
+
     l_unique, l_inv_map = np.unique(l, return_inverse=True)
     l_power_tile = np.tile(l_unique, (r.shape[1], 1)).T
     F_unique = np.power(r[:l_unique.shape[0]] / r_max, l_power_tile)
     F = F_unique[l_inv_map]
 
-    # spherical harmonic component
+    # Spherical harmonic component.
     lm_unique_combs, lm_inv_map = np.unique(np.vstack([l, m]).T, axis=0,
                                             return_inverse=True)
     num_lm_combs = lm_unique_combs.shape[0]
     l_sph_harm_tile = np.tile(lm_unique_combs[:, 0], (p.shape[1], 1)).T
     m_sph_harm_tile = np.tile(lm_unique_combs[:, 1], (p.shape[1], 1)).T
-    
+
     y_unique = np.conj(sp.special.sph_harm(m_sph_harm_tile, l_sph_harm_tile,
                                            p[:num_lm_combs], t[:num_lm_combs]))
     y = y_unique[lm_inv_map]
 
     if True in np.isinf(E):
         print('Error: E is inf')
-        print('E',E)
-        print('n',n,
-              'l',l,
-              'D',D,
-              'r',np.array(r),
-              'rmax',r_max)
+        print(f'E={E}, n={n}, l={l}, D={D}, r={np.array(r)}, rmax={r_max}')
 
-    # assemble coefficients
-    #print(weights.shape,E.shape,F.shape,y.shape)
-    # n indexes the combinations of n,l,m and N indexes the points in the point cloud
+    # n indexes the combinations of n, l, m and N indexes the points in the point cloud
     coeffs = A * B * C * np.einsum('cN,nN,nN,nN->cn', weights, E, F, y)
 
     return coeffs
 
-def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
+def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
 
@@ -122,16 +143,16 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     #         weights = curr_SASA
     #     if ch == 'charge':
     #         weights = curr_charge
-            
+
     #    arr_weights[i_ch] = weights
-    arr_weights[0] = np.array(elements == b'C',dtype=float)
-    arr_weights[1] = np.array(elements == b'N',dtype=float)
-    arr_weights[2] = np.array(elements == b'O',dtype=float)
-    arr_weights[3] = np.array(elements == b'S',dtype=float)
-    arr_weights[4] = np.array(elements == b'H',dtype=float)
+    arr_weights[0] = np.array(elements == b'C', dtype=float)
+    arr_weights[1] = np.array(elements == b'N', dtype=float)
+    arr_weights[2] = np.array(elements == b'O', dtype=float)
+    arr_weights[3] = np.array(elements == b'S', dtype=float)
+    arr_weights[4] = np.array(elements == b'H', dtype=float)
     arr_weights[5] = curr_SASA
     arr_weights[6] = curr_charge
-    
+
     ch_num = len(channels)
     out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
 
@@ -139,26 +160,18 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     ts = np.tile(t, (nonzero_len, 1))
     ps = np.tile(p, (nonzero_len, 1))
 
-        
     out_z[:,nonzero_idxs] = zernike_coeff_lm_new(rs, ts, ps, ns[nonzero_idxs],
                                                    10.0, ls[nonzero_idxs], ms[nonzero_idxs],
                                                    arr_weights)
     #return out_z
-        
-        
     low_idx = 0
     for l in range(L_max + 1):
         num_m = (2 * l + 1)
         high_idx = (nmax) * num_m  + low_idx
         arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*ch_num, num_m, )
         low_idx = high_idx
-        
-        
-            
+
     return arr[0]
-
-
-
 
 def get_sparse_hologram(nh,L_max,ks,num_combi_channels,r_max):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])

@@ -10,14 +10,11 @@
 
 
 # dictionaries for converting amino acid to index and vice-versa
-aa_to_ind = {'CYS': 2, 'ILE': 8, 'GLN': 12, 'VAL': 6, 'LYS': 13,
-             'PRO': 4, 'GLY': 0, 'THR': 5, 'PHE': 16, 'GLU': 14,
-             'HIS': 15, 'MET': 11, 'ASP': 7, 'LEU': 9, 'ARG': 17,
-             'TRP': 19, 'ALA': 1, 'ASN': 10, 'TYR': 18, 'SER': 3}
 ind_to_aa = {0: 'GLY', 1: 'ALA', 2: 'CYS', 3: 'SER', 4: 'PRO',
              5: 'THR', 6: 'VAL', 7: 'ASP', 8: 'ILE', 9: 'LEU',
              10: 'ASN', 11: 'MET', 12: 'GLN', 13: 'LYS', 14: 'GLU',
              15: 'HIS', 16: 'PHE', 17: 'ARG', 18: 'TYR', 19: 'TRP'}
+aa_to_ind = {v: k for k, v in ind_to_aa.items()}
 
 # dictionaries to convert element to index
 el_to_ind = {'C':0 , 'N':1, 'O':2, 'S':3}
@@ -36,26 +33,7 @@ aa_to_one_letter = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E',
                         'LYS': 'K', 'LEU': 'L', 'MET': 'M', 'ASN': 'N',
                         'PRO': 'P', 'GLN': 'Q', 'ARG': 'R', 'SER':'S',
                         'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'}
-one_letter_to_aa = {'A': 'ALA',
- 'C': 'CYS',
- 'D': 'ASP',
- 'E': 'GLU',
- 'F': 'PHE',
- 'G': 'GLY',
- 'H': 'HIS',
- 'I': 'ILE',
- 'K': 'LYS',
- 'L': 'LEU',
- 'M': 'MET',
- 'N': 'ASN',
- 'P': 'PRO',
- 'Q': 'GLN',
- 'R': 'ARG',
- 'S': 'SER',
- 'T': 'THR',
- 'V': 'VAL',
- 'W': 'TRP',
- 'Y': 'TYR'}
+one_letter_to_add = {v: k for v, k in aa_to_one_letter.items()}
 
 #Mike uses this one
 aa_to_ind_size = {'CYS': 2, 'ILE': 8, 'GLN': 12, 'VAL': 6, 'LYS': 13,

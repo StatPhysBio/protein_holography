@@ -71,14 +71,14 @@ def get_structural_info(
         chain = pi.chain(i)
         resnum = str(pi.number(i)).encode()
         icode = pi.icode(i).encode()
-        chi1 = b''
+        #chi1 = b''
         #print(aa)
-        if aa not in ['G','A','Z']:
-            try:
-                chi1 = str(pose.chi(1,i)).encode()
-            except:
-                print(pdb,aa,chain,resnum)
-                #print(chi1)
+        #if aa not in ['G','A','Z']:
+        #    try:
+        #        chi1 = str(pose.chi(1,i)).encode()
+        #    except:
+        #        print(pdb,aa,chain,resnum)
+        #        #print(chi1)
         for j in range(1,len(pose.residue(i).atoms())+1):
 
             atom_name = pose.residue_type(i).atom_name(j)
@@ -90,7 +90,15 @@ def get_structural_info(
             charge = pose.residue_type(i).atom_charge(j)
 
             
-            res_id =np.array([aa,pdb,chain,resnum,icode,ss,chi1],dtype='S5')
+            res_id =np.array([
+                aa,
+                pdb,
+                chain,
+                resnum,
+                icode,
+                ss,
+                #chi1
+            ],dtype='S5')
             
             atom_names.append(atom_name)
             elements.append(element)
@@ -112,7 +120,7 @@ def get_structural_info(
 
 # given a matrix, pad it with empty array
 def pad(arr,padded_length=100):
-
+    #print('array = ',arr)
     # get dtype of input array
     dt = arr[0].dtype
 
@@ -127,11 +135,11 @@ def pad(arr,padded_length=100):
 
     # create padded array
     padded_shape = (padded_length,*shape)
-    mat_arr = np.empty(padded_shape, dtype=dt)
+    mat_arr = np.zeros(padded_shape, dtype=dt)
     
     # if type is string fill array with empty strings
-    if np.issubdtype(bytes, dt):
-        mat_arr.fill(b'')
+    #if np.issubdtype(bytes, dt):
+    #    mat_arr.fill(b'')
 
     # add data to padded array
     mat_arr[:orig_length] = np.array(arr)

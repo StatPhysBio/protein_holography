@@ -21,17 +21,19 @@ from pyrosetta.rosetta import core, protocols, numeric, basic, utility
 init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -ignore_zero_occupancy false -obey_ENDMDL 1'
 pyrosetta.init(init_flags)
 
-def process_data(pdb):
+def process_data(pdb,pdb_dir):
     assert(process_data.callback)
 
     pdb = pdb.decode('utf-8')
     #pdb_file = '/gscratch/scrubbed/mpun/data/T4/pdbs/' + pdb + '.pdb'
     #pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/training_30/' + pdb + '.pdb'
-    pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/validation/' + pdb + '.pdb'
+    #pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/validation/' + pdb + '.pdb'
     #pdb_file = '/gscratch/scrubbed/mpun/data/DunhamBeltrao/pdbs/' + pdb + '.pdb'
     #pdb_file = '/gscratch/scrubbed/mpun/data/CoV2_ACE2/' + pdb + '.pdb'
     #pdb_file = '/gscratch/stf/mpun/data/TCRStructure/pdbs/' + pdb + '.pdb'
     #pdb_file = '/gscratch/stf/mpun/data/proteinG/' + pdb + '.pdb'
+    pdb_file = pdb_dir + pdb + '.pdb'
+    
     try:
         pose = pyrosetta.pose_from_pdb(pdb_file)
     except:
@@ -49,10 +51,11 @@ def initializer(init, callback, params, init_params):
 
 
 class PDBPreprocessor:
-    def __init__(self, hdf5_file, pdb_list):
+    def __init__(self, hdf5_file, pdb_list, pdb_dir):
         with h5py.File(hdf5_file,'r') as f:
             pdb_list = np.array(f[pdb_list])
 
+        self.pdb_dir = pdb_dir
         self.__data = pdb_list
         self.size = len(pdb_list)
     def count(self):
@@ -72,8 +75,11 @@ class PDBPreprocessor:
                 pass
             else:
                 raise Exception("Some PDB files could not be loaded.")
-
-            for res in pool.imap(process_data, data):
+            process_data_pdbs = functools.partial(
+                process_data,
+                pdb_dir=self.pdb_dir
+            )
+            for res in pool.imap(process_data_pdbs, data):
                 if res:
                     yield res
 
