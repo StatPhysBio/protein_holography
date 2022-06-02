@@ -14,7 +14,7 @@ from progress.bar import Bar
 
 from protein_holography.preprocess.sample.preprocessor import PDBPreprocessor
 from protein_holography.utils.posterity import get_metadata,record_metadata
-import protein_holography.utils.protein import protein
+from protein_holography.utils.protein import *
 
 # function to be applied to each pdb in list
 # take a pdb and retrieve all residues from it

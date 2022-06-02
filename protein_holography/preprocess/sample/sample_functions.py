@@ -8,9 +8,9 @@ import Bio.PDB as pdb
 import numpy as np
 
 import protein_holography.hologram.sample_protein as sample_protein
-import protein_holography.utils.protein as protein
+from protein_holography.utils.protein import *
 
-amino_acids = list(protein.aa_to_ind.keys())
+amino_acids = list(aa_to_ind.keys())
 
 def sample_equally(pdb_list,pdb_dir,instances):
     # get a list of all amino acids needed for the sample
@@ -43,7 +43,7 @@ def sample_equally(pdb_list,pdb_dir,instances):
         
         if sample_res == None:
             continue
-        if len([x for x in sample_res]) != protein.atoms_per_aa[curr_aa]:
+        if len([x for x in sample_res]) != atoms_per_aa[curr_aa]:
             continue
         aa_found = True
         resname = sample_res.get_resname()
@@ -94,13 +94,13 @@ def sample_equally_from_df(pdb_list,pdb_df,instances):
                                            pdb_dir + '/' + curr_pdb + '.pdb')
         pdb_ind += 1
 
-        sample_res = sample_protein.sample_amino_acid_from_protein(
+        ample_res = sample_protein.sample_amino_acid_from_protein(
             curr_struct,curr_pdb,curr_aa
         )
         
         if sample_res == None:
             continue
-        if len([x for x in sample_res]) != protein.atoms_per_aa[curr_aa]:
+        if len([x for x in sample_res]) != atoms_per_aa[curr_aa]:
             continue
         aa_found = True
         resname = sample_res.get_resname()
