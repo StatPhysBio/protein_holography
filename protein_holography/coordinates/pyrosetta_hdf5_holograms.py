@@ -66,12 +66,12 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
 
     return coeffs
 
-def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
+def get_hologram(nh,L_max,ks,num_combi_channels,r_max,
+                 element_channels=[b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]
     channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
@@ -105,27 +105,16 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     nonzero_len = np.count_nonzero(nonzero_idxs)
     nmax = len(ks)
 
-    arr_weights = np.empty(shape=(7,r.shape[-1],))
+    arr_weights = np.empty(shape=(num_channels,r.shape[-1],))
     which_channel = np.array( elements[:,None] == element_channels, dtype=float)
     r,t,p = np.einsum('ij->ji',atom_coords)
     
-    for i_ch,ch in enumerate(channels):
-
-        if ch in element_channels:
-            weights= which_channel[:,i_ch]
-            
-        elif ch == b'Unk':
-            weights= np.logical_not( np.any( which_channel,axis=1))
-            
-        elif ch == b'SASA':
-            weights = curr_SASA
-        elif ch == b'charge':
-            weights = curr_charge
-            
-        arr_weights[i_ch] = weights
+    arr_weights[:len(element_channels)] = which_channel
+    arr_weights[-3] = np.logical_not( np.any( which_channel,axis=1))
+    arr_weights[-2] = curr_SASA
+    arr_weights[-1] = curr_charge
         
-    ch_num = len(channels)
-    out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
+    out_z = np.zeros(shape=(num_channels,ns.shape[0]), dtype=np.complex64)
 
         out_z = np.zeros(shape=ns.shape[0], dtype=np.complex64)
 

@@ -10,10 +10,10 @@ import logging
 from progress.bar import Bar
 import traceback
 
-def c(np_nh,L_max,ks,num_combi_channels,r_max):
+def c(np_nh,L_max,ks,num_combi_channels,r_max,element_channels):
 
     #try:
-    hgm = get_hologram(np_nh,L_max,ks,num_combi_channels,r_max)
+    hgm = get_hologram(np_nh,L_max,ks,num_combi_channels,r_max,element_channels)
 
     #except Exception as e:
     #    print(e)
@@ -78,7 +78,8 @@ def get_zernikegrams(
                     params = {'L_max': Lmax,
                               'ks':ks,
                               'num_combi_channels': num_combi_channels,
-                              'r_max': r_max},
+                              'r_max': r_max,
+                              "element_channels":element_channels},
                     parallelism = parallelism)):
                 if hgm is None or hgm[0] is None:
                     bar.next()

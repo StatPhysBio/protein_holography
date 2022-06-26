@@ -10,10 +10,10 @@ import logging
 from progress.bar import Bar
 import traceback
 
-def c(np_nh,L_max,ks,num_combi_channels,r_max):
+def c(np_nh,L_max,ks,num_combi_channels,r_max,element_channels):
 
     #try:
-    hgm = get_hologram(np_nh,L_max,ks,num_combi_channels,r_max)
+    hgm = get_hologram(np_nh,L_max,ks,num_combi_channels,r_max,element_channels)
 
     #except Exception as e:
     #    print(e)
@@ -78,7 +78,8 @@ if __name__ == "__main__":
                     params = {'L_max': args.Lmax,
                               'ks':args.ks,
                               'num_combi_channels': num_combi_channels,
-                              'r_max': args.r_max},
+                              'r_max': args.r_max,
+                              "element_channels":element_channels},
                     parallelism = args.parallelism)):
                 if hgm is None:
                     bar.next()

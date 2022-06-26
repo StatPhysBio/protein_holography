@@ -66,12 +66,12 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
 
     return coeffs
 
-def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
+def get_hologram(nh,L_max,ks,num_combi_channels,r_max,
+                 element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]
     channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
