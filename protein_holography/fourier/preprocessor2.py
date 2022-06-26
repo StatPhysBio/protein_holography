@@ -1,0 +1,113 @@
+import functools
+import itertools
+import logging
+from multiprocessing import Pool, TimeoutError
+import os
+import signal
+import time
+import warnings
+
+from Bio.PDB import PDBList, PDBParser
+from Bio.PDB.mmtf import MMTFParser
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
+import h5py
+import numpy as np
+import pandas as pd
+
+def load_data(nb):
+
+    try:
+        name = nb[1].decode('utf-8')
+    except:
+        print('Problematic namne ',nb[1])
+    parser = PDBParser(QUIET=True)
+
+    try:
+        struct = parser.get_structure(name,
+                                      '/gscratch/stf/mpun/data/casp11/training30/{}.pdb'.format(name))
+        exists = True
+    except:
+        exists= False
+    
+    return exists
+
+
+def process_data(nb):
+    assert(process_data.callback)
+
+    # parser = MMTFParser()
+    # name = nb[1].decode('utf-8')
+    # nh = (int(nb[2].decode('utf-8')),
+    #       nb[3].decode('utf-8'),
+    #       (nb[4].decode('utf-8'),
+    #       int(nb[5].decode('utf-8')),
+    #       nb[6].decode('utf-8')))
+    # try:
+    #     with h5py.File('/gscratch/spe/mpun/protein_holography/data/coordinates/casp11_training30_val_complete.hdf5',
+    #                    'r') as f:
+    #         C_coords = np.array(f["{}/{}/{}/C".format(name,nh,10.)])
+    #         N_coords = np.array(f["{}/{}/{}/N".format(name,nh,10.)])
+    #         O_coords = np.array(f["{}/{}/{}/O".format(name,nh,10.)])
+    #         S_coords = np.array(f["{}/{}/{}/S".format(name,nh,10.)])
+    #     #struct = parser.get_structure('/gscratch/stf/mpun/data/casp11/training30/{}.mmtf'.format(name))
+    # except:
+    #     print(nb)
+    #     print('failed')
+    #     return False
+    # coords = [C_coords,O_coords,N_coords,S_coords]
+    coords = 0
+    return process_data.callback(coords, nb, **process_data.params)
+
+
+
+def initializer(init, callback, params, init_params):
+    if init is not None:
+        init(**init_params)
+    process_data.callback = callback
+    process_data.params = params
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+class HDF5Preprocessor:
+    def __init__(self, hdf5_file, nh_list, coord_file):
+#    def __init__(self, path):
+        #df = pd.read_table(path, header=None, names=["aa", "neighborhood", "extra"])
+        with h5py.File(hdf5_file,'r') as f:
+            nh_list = np.array(f[nh_list])
+        self.__data = nh_list
+        self.coord_file = coord_file
+#        self.__data = pd.Series(nh_list,
+#                                index=['aa',
+#                                       'pdb',
+#                                       'model',
+#                                       'chain',
+#                                       'hetero',
+#                                       'seq id',
+#                                       'insertion']
+#                            )
+
+        #print(df)
+        #self.__data = df['neighborhood'].apply(lambda x: eval(x))
+
+    def count(self):
+        return self.__data.shape[0]
+
+    def execute(self, callback, parallelism = 8, limit = None, params = None, init = None, init_params = None):
+        if limit is None:
+            data = self.__data
+        else:
+            data = self.__data[:limit]
+        with Pool(initializer = initializer, processes=parallelism, initargs = (init, callback, params, init_params)) as pool:
+
+            #all_loaded = functools.reduce(lambda x, y: x and y, pool.imap(load_data, data))
+            all_loaded = True
+            if all_loaded:
+                # logging.info('All PDB files are loaded.')
+                pass
+            else:
+                raise Exception("Some PDB files could not be loaded.")
+
+            for coords in pool.imap(process_data, data):
+                if  coords:
+                    yield coords
+
