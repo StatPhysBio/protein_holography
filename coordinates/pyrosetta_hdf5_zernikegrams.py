@@ -73,7 +73,8 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    channels = ['C','N','O','S','H','SASA','charge']
+    element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]
+    channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
     real_locs = np.logical_and(atom_names != b'',nh['coords'][:,0] <= r_max)
@@ -107,26 +108,24 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     nmax = len(ks)
 
     arr_weights = np.empty(shape=(7,r.shape[-1],))
+    which_channel = np.array( elements[:,None] == element_channels, dtype=float)
+    r,t,p = np.einsum('ij->ji',atom_coords)
+    
     for i_ch,ch in enumerate(channels):
 
-
-        r,t,p = np.einsum('ij->ji',atom_coords)
-        if ch == 'C':
-            weights=np.array(elements == b'C',dtype=float)
-        if ch == 'N':
-            weights=np.array(elements == b'N',dtype=float)
-        if ch == 'O':
-            weights=np.array(elements == b'O',dtype=float)
-        if ch == 'S':
-            weights=np.array(elements == b'S',dtype=float)
-        if ch == 'H':
-            weights=np.array(elements == b'H',dtype=float)
-        if ch == 'SASA':
+        if ch in element_channels:
+            weights= which_channel[:,i_ch]
+            
+        elif ch == b'Unk':
+            weights= np.logical_not( np.any( which_channel,axis=1))
+            
+        elif ch == b'SASA':
             weights = curr_SASA
-        if ch == 'charge':
+        elif ch == b'charge':
             weights = curr_charge
             
         arr_weights[i_ch] = weights
+        
     ch_num = len(channels)
     out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
 

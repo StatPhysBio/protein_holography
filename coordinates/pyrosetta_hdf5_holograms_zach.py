@@ -71,7 +71,8 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    channels = ['C','N','O','S','H','SASA','charge']
+    element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]
+    channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
     real_locs = atom_names != b''
@@ -104,28 +105,21 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     nmax = len(ks)
 
 
+    which_channel = elements[:,None] == element_channels)
     for i_ch,ch in enumerate(channels):
-
-        if ch == 'C':
-            r,t,p = *atom_coords[elements == b'C'].T,
+            
+        if ch in element_channels:
+            r,t,p = *atom_coords[np.where(which_channel[:,i_ch])].T,
             weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'N':
-            r,t,p = *atom_coords[elements == b'N'].T,
+            
+        elif ch == b'Unk':
+            r,t,p = *atom_coords[np.where(np.logical_not( np.any( which_channel,axis=1)))].T,
             weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'O':
-            r,t,p = *atom_coords[elements == b'O'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'S':
-            r,t,p = *atom_coords[elements == b'S'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'H':
-            r,t,p = *atom_coords[elements == b'H'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'SASA':
+                                          
+        elif ch == b'SASA':
             weights = curr_SASA
             r,t,p = np.einsum('ij->ji',atom_coords)
-            #print(weights)
-        if ch == 'charge':
+        elif ch == b'charge':
             r,t,p = np.einsum('ij->ji',atom_coords)
             weights = curr_charge
 

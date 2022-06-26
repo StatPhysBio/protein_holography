@@ -50,7 +50,8 @@ if __name__ == "__main__":
     ds = PDBPreprocessor(args.hdf5_in,args.neighborhood_list)
     bad_neighborhoods = []
     n = 0
-    channels = ['C','N','O','S','H','SASA','charge']
+    element_channels = [b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]
+    channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_combi_channels = len(channels) * len(args.ks)
     
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(args.Lmax + 1)])
