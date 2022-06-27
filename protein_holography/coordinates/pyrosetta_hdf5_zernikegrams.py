@@ -86,12 +86,13 @@ def zernike_coeff_lm_new(r: np.ndarray, t: np.ndarray, p: np.ndarray, n: np.ndar
 
     return coeffs
 
-def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64):
+def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64,
+                 element_channels=[b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    channels = ['C','N','O','S','H','SASA','charge']
+    channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
     real_locs = np.logical_and(atom_names != b'',nh['coords'][:,0] <= r_max)
@@ -123,38 +124,17 @@ def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64):
     nonzero_idxs = ~(l_greater_n | odds)
     nonzero_len = np.count_nonzero(nonzero_idxs)
     nmax = len(ks)
+    
+    arr_weights = np.empty(shape=(num_channels,r.shape[-1],))
+    which_channel = np.array( elements[:,None] == element_channels, dtype=float)
+    r,t,p = np.einsum('ij->ji',atom_coords)
+    
+    arr_weights[:len(element_channels)] = which_channel
+    arr_weights[-3] = np.logical_not( np.any( which_channel,axis=1))
+    arr_weights[-2] = curr_SASA
+    arr_weights[-1] = curr_charge
 
-    arr_weights = np.empty(shape=(7,r.shape[-1],))
-    # for i_ch,ch in enumerate(channels):
-
-
-    #     r,t,p = np.einsum('ij->ji',atom_coords)
-    #     if ch == 'C':
-    #         weights=np.array(elements == b'C',dtype=float)
-    #     if ch == 'N':
-    #         weights=np.array(elements == b'N',dtype=float)
-    #     if ch == 'O':
-    #         weights=np.array(elements == b'O',dtype=float)
-    #     if ch == 'S':
-    #         weights=np.array(elements == b'S',dtype=float)
-    #     if ch == 'H':
-    #         weights=np.array(elements == b'H',dtype=float)
-    #     if ch == 'SASA':
-    #         weights = curr_SASA
-    #     if ch == 'charge':
-    #         weights = curr_charge
-
-    #    arr_weights[i_ch] = weights
-    arr_weights[0] = np.array(elements == b'C', dtype=float)
-    arr_weights[1] = np.array(elements == b'N', dtype=float)
-    arr_weights[2] = np.array(elements == b'O', dtype=float)
-    arr_weights[3] = np.array(elements == b'S', dtype=float)
-    arr_weights[4] = np.array(elements == b'H', dtype=float)
-    arr_weights[5] = curr_SASA
-    arr_weights[6] = curr_charge
-
-    ch_num = len(channels)
-    out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
+    out_z = np.zeros(shape=(num_channels,ns.shape[0]), dtype=np.complex64)
 
     rs = np.tile(r, (nonzero_len, 1))
     ts = np.tile(t, (nonzero_len, 1))
@@ -168,7 +148,7 @@ def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64):
     for l in range(L_max + 1):
         num_m = (2 * l + 1)
         high_idx = (nmax) * num_m  + low_idx
-        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*ch_num, num_m, )
+        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*num_channels, num_m, )
         low_idx = high_idx
 
     return arr[0]
@@ -240,8 +220,8 @@ def get_sparse_hologram(nh,L_max,ks,num_combi_channels,r_max):
     arr_weights[4] = np.array(atom_names == b'CB',dtype=float)
 
     
-    ch_num = len(channels)
-    out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
+    num_channels = len(channels)
+    out_z = np.zeros(shape=(num_channels,ns.shape[0]), dtype=np.complex64)
 
     rs = np.tile(r, (nonzero_len, 1))
     ts = np.tile(t, (nonzero_len, 1))
@@ -258,7 +238,7 @@ def get_sparse_hologram(nh,L_max,ks,num_combi_channels,r_max):
     for l in range(L_max + 1):
         num_m = (2 * l + 1)
         high_idx = (nmax) * num_m  + low_idx
-        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*ch_num, num_m, )
+        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*num_channels, num_m, )
         low_idx = high_idx
         
         
@@ -343,8 +323,8 @@ def get_backbone_hologram(nh,L_max,ks,num_combi_channels,r_max):
     ]),dtype=float)
 
     
-    ch_num = len(channels)
-    out_z = np.zeros(shape=(ch_num,ns.shape[0]), dtype=np.complex64)
+    num_channels = len(channels)
+    out_z = np.zeros(shape=(num_channels,ns.shape[0]), dtype=np.complex64)
 
     rs = np.tile(r, (nonzero_len, 1))
     ts = np.tile(t, (nonzero_len, 1))
@@ -361,7 +341,7 @@ def get_backbone_hologram(nh,L_max,ks,num_combi_channels,r_max):
     for l in range(L_max + 1):
         num_m = (2 * l + 1)
         high_idx = (nmax) * num_m  + low_idx
-        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*ch_num, num_m, )
+        arr[0][l][:,:] = out_z[:,low_idx:high_idx].reshape(nmax*num_channels, num_m, )
         low_idx = high_idx
         
         
