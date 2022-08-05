@@ -66,12 +66,13 @@ def zernike_coeff_lm_new(r, t, p, n, r_max, l, m, weights):
 
     return coeffs
 
-def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
+def get_hologram(nh,L_max,ks,num_combi_channels,r_max,
+                 element_channels=[b'C',b'N',b'O',b'S',b'H',b"P",b"F",b"Cl",]):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
 
     # get info from nh
-    channels = ['C','N','O','S','H','SASA','charge']
+    channels = np.concatenate((element_channels, [b"Unk", b'SASA',b'charge']))
     num_channels = len(channels)
     atom_names = nh['atom_names']
     real_locs = np.logical_and(atom_names != b'',nh['coords'][:,0] <= r_max)
@@ -104,31 +105,16 @@ def get_hologram(nh,L_max,ks,num_combi_channels,r_max):
     nonzero_len = np.count_nonzero(nonzero_idxs)
     nmax = len(ks)
 
-
-    for i_ch,ch in enumerate(channels):
-
-        if ch == 'C':
-            r,t,p = *atom_coords[elements == b'C'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'N':
-            r,t,p = *atom_coords[elements == b'N'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'O':
-            r,t,p = *atom_coords[elements == b'O'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'S':
-            r,t,p = *atom_coords[elements == b'S'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'H':
-            r,t,p = *atom_coords[elements == b'H'].T,
-            weights=np.ones(shape=(r.shape[-1],))
-        if ch == 'SASA':
-            weights = curr_SASA
-            r,t,p = np.einsum('ij->ji',atom_coords)
-            #print(weights)
-        if ch == 'charge':
-            r,t,p = np.einsum('ij->ji',atom_coords)
-            weights = curr_charge
+    arr_weights = np.empty(shape=(num_channels,r.shape[-1],))
+    which_channel = np.array( elements[:,None] == element_channels, dtype=float)
+    r,t,p = np.einsum('ij->ji',atom_coords)
+    
+    arr_weights[:len(element_channels)] = which_channel
+    arr_weights[-3] = np.logical_not( np.any( which_channel,axis=1))
+    arr_weights[-2] = curr_SASA
+    arr_weights[-1] = curr_charge
+        
+    out_z = np.zeros(shape=(num_channels,ns.shape[0]), dtype=np.complex64)
 
         out_z = np.zeros(shape=ns.shape[0], dtype=np.complex64)
 
