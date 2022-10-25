@@ -45,6 +45,7 @@ def process_data(pdb: str, pdb_dir: str) -> np.ndarray:
     #pdb_file = '/gscratch/stf/mpun/data/proteinG/' + pdb + '.pdb'
     pdb_file = os.path.join(pdb_dir, pdb) + '.pdb'
     try:
+        #print('Getting pose for pdb',pdb)
         pose = pyrosetta.pose_from_pdb(pdb_file)
     except:
         print(f'Pose could not be created for protein {pdb_file}.')
@@ -67,7 +68,7 @@ class PDBPreprocessor:
         self.pdb_dir = pdb_dir
         self.__data = pdb_list
         self.size = len(pdb_list)
-
+        
     def count(self) -> int:
         """
         Return the length of the data.
