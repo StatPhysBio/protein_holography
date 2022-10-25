@@ -32,7 +32,7 @@ def get_data_id(args):
                      'scale','load',
                      'netL','dropout_rate',
                      'n_dense','reg_strength',
-                     'opt'
+                     'opt','loaddir'
 ] 
     return get_id_from_params(args,ignore_params)
 
@@ -47,7 +47,7 @@ def get_val_data_id(args):
                      'netL','dropout_rate',
                      'netL','dropout_rate',
                      'n_dense','reg_strength',
-                     'opt'
+                     'opt','loaddir'
 ] 
     return get_id_from_params(val_args,ignore_params)
 
@@ -62,19 +62,19 @@ def get_test_data_id(args):
                      'netL','dropout_rate',
                      'netL','dropout_rate',
                      'n_dense','reg_strength',
-                     'opt'
+                     'opt','loaddir'
 ] 
     return get_id_from_params(val_args,ignore_params)
 
 def get_network_id(args):
 
-    ignore_params = ['datadir','outputdir','verbosity','load','eTest']
+    ignore_params = ['datadir','outputdir','verbosity','load','eTest','loaddir']
     return get_id_from_params(args,ignore_params,network=True)
 
 
 def get_test_network_id(args):
     ignore_params = ['datadir','outputdir','verbosity','load',
-                     'subset'
+                     'subset','loaddir'
     ]
 
     return get_id_from_params(args,ignore_params,network=True)
