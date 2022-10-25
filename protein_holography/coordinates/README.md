@@ -1,8 +1,7 @@
-#
 # README file for the coordinate gathering process.
-#
 
-1. get_structural_info.py
+
+## get_structural_info.py
 
    Purpose:
 	The purpose of this script is to collect the structural info from
@@ -16,7 +15,8 @@
 	   4. SASAs
 	   5. charges
 
-   Arguments:
+Arguments:
+
 	--hdf5_in: hdf5 file that contains a list of pdb ids which
 		   this program will collect the structural info of
 	--pdb_list: name of the dataset in hdf5_in file that contains
@@ -25,9 +25,9 @@
 	--hdf5_out: Output hdf5 file to write protein structual info to
      	--parallelism: number of processes to use
 
-2. get_neighborhoods.py
+## get_neighborhoods.py
 
-   Purpose:
+Purpose:
 	The script will then collect amino acid neighborhoods from the
 	previously collected structural info. It will collect neighborhoods
 	for all residues in the proteins given in the hdf5_in file. The
@@ -35,7 +35,8 @@
 	coordinates are now spherical centered around the central residue's
 	alpha carbon.
 
-    Arguments:
+Arguments:
+
 	--hdf5_in: hdf5 file that contains a np array of proteins which
 		   this program will break into neighborhoods
 	--protein_list: name of the dataset in hdf5_in file that contains
@@ -50,13 +51,14 @@
 			 sequences
      	--parallelism: number of processes to use
 
-3. get_holograms.py
+## get_holograms.py
 
-   Purpose:
+Purpose:
 	Finally this program will project local protein structures in
 	spherical coordinates into zernikegrams.
 	
-    Arguments:
+Arguments:
+
 	--hdf5_in: hdf5 file that contains a np array of neighborhoods which
 		   this program will project into fourier space
 	--neighborhood_list: name of the dataset in hdf5_in file that contains
@@ -71,3 +73,4 @@
 	    For example, to use all the integers between 0 and 5 inclusive
 	    as well as 17 and 100 you can put -k 0 1 2 3 4 5 17 100
 	--parallelism: number of processes to use
+	
