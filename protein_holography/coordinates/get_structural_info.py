@@ -22,16 +22,19 @@ from protein_holography.coordinates.preprocessor_pdbs import PDBPreprocessor
 from protein_holography.utils.posterity import get_metadata,record_metadata
 
 def c(pose,padded_length=200000):
-
+    #print(pose)
     if pose is None:
         print('pose is none')
         return (None,)
 
     try:
+        #print('Getting structural info')
         pdb,ragged_structural_info = get_structural_info(pose)
+        #print('Padding structural info')
         mat_structural_info = pad_structural_info(
             ragged_structural_info,padded_length=padded_length
         )
+        #print('done with both')
     except Exception as e:
         print(e)
         print('Error with',pose.pdb_info().name())
@@ -76,6 +79,7 @@ if __name__ == "__main__":
         f.create_dataset(args.pdb_list,
                          shape=(ds.size,),
                          dtype=dt)
+    print("beginning data gathering process")    
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(args.hdf5_out,'r+') as f:
             for i,structural_info in enumerate(ds.execute(
