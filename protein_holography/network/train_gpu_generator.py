@@ -20,8 +20,8 @@ from tqdm import tqdm
 
 import protein_holography.network.clebsch as clebsch
 from protein_holography.network.dataset import get_dataset, get_inputs
-import protein_holography.network.hnn import hnn
-import protein_holography.network.naming import get_network_ids
+import protein_holography.network.hnn as hnn
+from protein_holography.network.naming import get_network_id
 #sys.path.append('/premiumproteindatadrive/protein_holography/utils')
 from protein_holography.utils.posterity import get_metadata, record_metadata
 
@@ -299,18 +299,20 @@ def main():
             y = np.empty((self.batch_size), dtype=int)
 
             # Generate data
-            for i, ID in enumerate(list_IDs_temp):
+            with h5py.File(self.hdf5_file,'r') as f:
+                for i, ID in enumerate(list_IDs_temp):
                 # Store sample
-                with h5py.File(self.hdf5_file,'r') as f:
+
                     #print(ID)
     #                 try:
                     X[i,] = f[self.hdf5_dataset][ID]
     #                 except:
     #                     print(ID)
-                # Store class
-                y[i] = self.labels[ID]
+                    # Store class
+                    y[i] = self.labels[ID]
+            y = np.zeros(shape=(len(y)))
+                
 
-            #print(X.dtype)
             return {i:X[str(i)].astype(np.complex64) for i in range(self.L_max + 1)}, tf.keras.utils.to_categorical(y, num_classes=self.n_classes)
 
     #
@@ -321,29 +323,28 @@ def main():
     #
     # validation holograms
     #
-    max_val = int(2e4)
-    filename = '/premiumproteindatadrive/pyrosetta_proteins/casp12_validation_holograms_L=7.hdf5'
-    with h5py.File('/premiumproteindatadrive/pyrosetta_proteins/'
-                   'casp12_validation_holograms_L=7.hdf5','r') as f:
-        ids = np.array(f['nh_list'])
+    max_val = int(2e3)
+    filename = '/mmfs1/gscratch/scrubbed/udnwaege/pyrosetta/protein_holography/protein_holography/data/validation_zernikegrams.hdf5'
+    with h5py.File(filename,'r') as f:
+        ids = f['nh_list'][:]
         total_ids = f['nh_list'].shape[0]
         bad_idxs = np.hstack(
             (np.squeeze(np.argwhere(ids[:,0]==b'Z')),
              np.squeeze(np.argwhere(ids[:,0]==b'X')),
-             np.squeeze(np.argwhere(ids[:,0]==b''))
-                             )
+             np.squeeze(np.argwhere(ids[:,0]==b''))                             )
         )
         good_idxs = np.setdiff1d(np.arange(total_ids,dtype=int),bad_idxs)
 
     np.random.seed(0)
     np.random.shuffle(good_idxs)
-    subset = good_idxs[:max_val]
+    subset = good_idxs #[:max_val]
 
 
     print(len(subset))
     #[idxs.remove(x) for x in tqdm(bad_idxs)]
     labels = {idx:aa_to_ind_size[one_letter_to_aa[x.decode('utf-8')]] 
               for idx,x in tqdm(zip(subset,ids[subset,0]))}
+    print('max value',np.max(labels.values()))
     val_dg = DataGenerator(subset,labels,filename,
                            'pdb_subsets/img=x-ray diffraction_max_res=2.5/split_0.8_0.2_0.0/'
                            'val/pdbs',
@@ -431,10 +432,9 @@ def main():
     print('Not attempting to load weights')
     total_history = None
     #max_train = int(6e6)
-    filename = '/premiumproteindatadrive/pyrosetta_proteins/casp12_training_holograms_L=7.hdf5'
-    with h5py.File('/premiumproteindatadrive/pyrosetta_proteins/'
-                   'casp12_training_holograms_L=7.hdf5','r') as f:
-        ids = np.array(f['nh_list'])
+    filename = '/mmfs1/gscratch/scrubbed/udnwaege/pyrosetta/protein_holography/protein_holography/data/validation_zernikegrams.hdf5'
+    with h5py.File(filename,'r') as f:
+        ids = f['nh_list'][:]
         total_ids = f['nh_list'].shape[0]
         bad_idxs = np.hstack(
             (np.squeeze(np.argwhere(ids[:,0]==b'Z')),
@@ -452,14 +452,14 @@ def main():
     np.random.shuffle(good_idxs)
     subset = good_idxs#[:max_train]
     print(len(subset))
-    subsets = np.split(subset[:int(6e6)],100)
+    #subsets = np.split(subset[:int(6e6)],100)
     #subsets.append(subset[-93:])
 
     labels = {idx:aa_to_ind_size[one_letter_to_aa[x.decode('utf-8')]] 
                  for idx,x in tqdm(zip(subset,ids[subset,0]))}
     dg = DataGenerator(subset,labels,filename,
                     'pdb_subsets/img=x-ray diffraction_max_res=2.5/split_0.8_0.2_0.0/'
-                       'train/pdbs',
+                       'val/pdbs',
                        batch_size=args.bsize[0])
 
     history = network.fit(dg,
