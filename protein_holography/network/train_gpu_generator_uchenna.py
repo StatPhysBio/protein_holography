@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 import protein_holography.network.clebsch as clebsch
 from protein_holography.network.dataset import get_dataset, get_inputs
-import protein_holography.network.hnn as hnn
+from protein_holography.network.hnn import hnn
 from protein_holography.network.naming import get_network_id
 #sys.path.append('/premiumproteindatadrive/protein_holography/utils')
 from protein_holography.utils.posterity import get_metadata, record_metadata
@@ -90,9 +90,9 @@ def main():
 
     logging.getLogger().setLevel(logging.INFO)
     gpus = tf.config.list_physical_devices('GPU')
-#    if gpus:
-#        for gpu in gpus:
-#            tf.config.experimental.set_virtual_device_configuration(gpu,[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2000)])
+    #if gpus:
+    #    for gpu in gpus:
+    #        tf.config.experimental.set_virtual_device_configuration(gpu,[tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2000)])
 
     # parameters 
     parser = ArgumentParser()
@@ -219,7 +219,12 @@ def main():
                         type=str,
                         default='../data',
                         help='data directory')
-
+    parser.add_argument('--loaddir',
+                        dest='loaddir',
+                        type=str,
+                        default='',
+                        help='data from which to load weights')
+    
     args =  parser.parse_args()
 
     # get metadata
@@ -264,11 +269,13 @@ def main():
             with h5py.File(self.hdf5_file,'r') as f:
                 print(f[self.hdf5_dataset])
                 self.dt = f[self.hdf5_dataset][0].dtype
+                self.entire_f = f[self.hdf5_dataset][:]
             self.n_classes = n_classes
             self.shuffle = shuffle
             self.on_epoch_end()
             self.L_max = args.netL[0]
-
+            self.noise_vals = np.load('/gscratch/scrubbed/mpun/data/casp12/zernikegrams/mean_power.npy',allow_pickle=True)[()]
+            
         def __len__(self):
             'Denotes the number of batches per epoch'
             return int(np.floor(len(self.list_IDs) / self.batch_size))
@@ -297,22 +304,31 @@ def main():
             # Initialization
             X = np.empty((self.batch_size),dtype=self.dt)
             y = np.empty((self.batch_size), dtype=int)
-
+            X_noise = [
+                np.random.normal(scale=1e-1,size=(self.batch_size,147,2*l+1)) +
+                1j * np.random.normal(scale=1e-1,size=(self.batch_size,147,2*l+1))
+                for l in range(self.L_max + 1)
+            ]
+            
             # Generate data
-            with h5py.File(self.hdf5_file,'r') as f:
-                for i, ID in enumerate(list_IDs_temp):
+            #with h5py.File(self.hdf5_file,'r') as f:
+            hfile = h5py.File(self.hdf5_file, 'r')
+            for i, ID in enumerate(list_IDs_temp):
                 # Store sample
-
                     #print(ID)
     #                 try:
-                    X[i,] = f[self.hdf5_dataset][ID]
+                X[i,] = self.entire_f[ID]
+                #X[i,] = hfile[self.hdf5_dataset][ID]
     #                 except:
     #                     print(ID)
                     # Store class
-                    y[i] = self.labels[ID]
-            y = np.zeros(shape=(len(y)))
-                
-
+                y[i] = self.labels[ID]
+            for i in range(self.L_max + 1):
+                X[str(i)] += X_noise[i] * self.noise_vals[i][None,:,None]
+            #print(X.dtype)
+            #print("---X Y SIZES HERE----")
+            #print((X.size * X.itemsize)/1024**2)
+            #print((y.size * y.itemsize)/1024**2)
             return {i:X[str(i)].astype(np.complex64) for i in range(self.L_max + 1)}, tf.keras.utils.to_categorical(y, num_classes=self.n_classes)
 
     #
@@ -323,31 +339,32 @@ def main():
     #
     # validation holograms
     #
-    max_val = int(2e3)
-    filename = '/mmfs1/gscratch/scrubbed/udnwaege/pyrosetta/protein_holography/protein_holography/data/validation_zernikegrams.hdf5'
-    with h5py.File(filename,'r') as f:
-        ids = f['nh_list'][:]
+    max_val = int(3e6)
+    filename = "/gscratch/scrubbed/mpun/data/casp12/zernikegrams/casp12_chain_validation_zernikegrams_round2_no_RBD_T4.hdf5"
+    #filename = './data/validation_zernikegrams.hdf5'
+    with h5py.File(filename ,'r') as f:
+        #print(ids.shape)
+        ids = np.array(f['nh_list'][:])
         total_ids = f['nh_list'].shape[0]
         bad_idxs = np.hstack(
             (np.squeeze(np.argwhere(ids[:,0]==b'Z')),
              np.squeeze(np.argwhere(ids[:,0]==b'X')),
-             np.squeeze(np.argwhere(ids[:,0]==b''))                             )
+             np.squeeze(np.argwhere(ids[:,0]==b''))
+                             )
         )
         good_idxs = np.setdiff1d(np.arange(total_ids,dtype=int),bad_idxs)
 
     np.random.seed(0)
     np.random.shuffle(good_idxs)
-    subset = good_idxs #[:max_val]
+    subset = good_idxs[:max_val]
 
 
     print(len(subset))
     #[idxs.remove(x) for x in tqdm(bad_idxs)]
     labels = {idx:aa_to_ind_size[one_letter_to_aa[x.decode('utf-8')]] 
               for idx,x in tqdm(zip(subset,ids[subset,0]))}
-    print('max value',np.max(labels.values()))
     val_dg = DataGenerator(subset,labels,filename,
-                           'pdb_subsets/img=x-ray diffraction_max_res=2.5/split_0.8_0.2_0.0/'
-                           'val/pdbs',
+                           'validation_chains',
                            batch_size=512)
 
 
@@ -360,7 +377,7 @@ def main():
     print('hidden L dims',hidden_l_dims)
     logging.info("L_MAX=%d, %d layers", args.netL[0], nlayers)
     logging.info("Hidden dimensions: %s", hidden_l_dims) 
-    network = hnn.hnn(
+    network = hnn(
         args.netL[0], hidden_l_dims, nlayers, n_classes,
         tf_cg_matrices, args.n_dense[0], 
         args.reg_strength[0], args.dropout_rate[0], args.scale[0], args.connection[0])
@@ -394,7 +411,6 @@ def main():
     # training dataset shouldn't be truncated unless testing
     #ds_train_trunc = ds_train.batch(args.bsize[0]) #.take(50)
 
-
     batch = val_dg.__getitem__(0)
     network.evaluate(x=batch[0],y=batch[1],use_multiprocessing=False,workers=1)
     network.summary()
@@ -425,16 +441,28 @@ def main():
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1,
                                   patience=10, min_lr=1e-9)
 
-    #try:
-    #    network.load_weights(checkpoint_filepath)
-    #except:
-    #    print('Unable to load weights')
-    print('Not attempting to load weights')
+    # loading of weights
+    if args.loaddir != '':
+        load_file = [x for x in os.listdir(args.loaddir) if 'index' in x and network_id.split('learnrate')[0] in x][0]
+        load_file = load_file.strip('.index')
+        print(load_file)
+        load_checkpoint_filepath = os.path.join(
+            args.loaddir,
+            load_file
+        )
+        try:
+            network.load_weights(load_checkpoint_filepath)
+            print('Successfully loaded weights')
+        except:
+            print('Unable to load weights')
+    else:
+        print('Not attempting to load weights')
     total_history = None
     #max_train = int(6e6)
-    filename = '/mmfs1/gscratch/scrubbed/udnwaege/pyrosetta/protein_holography/protein_holography/data/validation_zernikegrams.hdf5'
-    with h5py.File(filename,'r') as f:
-        ids = f['nh_list'][:]
+    # filename = "./data/training_zernikegrams.hdf5"
+    filename = "/gscratch/scrubbed/mpun/data/casp12/zernikegrams/casp12_chain_training_zernikegrams_round2_no_RBD_T4.hdf5"
+    with h5py.File(filename ,'r') as f:
+        ids = np.array(f['nh_list'][:])
         total_ids = f['nh_list'].shape[0]
         bad_idxs = np.hstack(
             (np.squeeze(np.argwhere(ids[:,0]==b'Z')),
@@ -458,24 +486,27 @@ def main():
     labels = {idx:aa_to_ind_size[one_letter_to_aa[x.decode('utf-8')]] 
                  for idx,x in tqdm(zip(subset,ids[subset,0]))}
     dg = DataGenerator(subset,labels,filename,
-                    'pdb_subsets/img=x-ray diffraction_max_res=2.5/split_0.8_0.2_0.0/'
-                       'val/pdbs',
+                       'training_chains',
+                       #'pdb_subsets/img=x-ray diffraction_max_res=2.5/split_0.8_0.2_0.0/'
+                       #'train/pdbs',
                        batch_size=args.bsize[0])
 
-    history = network.fit(dg,
-                use_multiprocessing=True,
-                workers=40,
-                validation_data=val_dg,
-                epochs=300,
-                verbose = args.verbosity,
-                max_queue_size=900,
-                steps_per_epoch=1000,
-                callbacks=[
-                    model_checkpoint_callback,
-                    reduce_lr,
-                    #tboard_callback,
-                    early_stopping
-                ]
+    history = network.fit(
+        dg,
+        use_multiprocessing=True,
+        workers=40,
+        validation_data=val_dg,
+        validation_steps=100,
+        epochs=300,
+        verbose = args.verbosity,
+        max_queue_size=900,
+        steps_per_epoch=1000,
+        callbacks=[
+            model_checkpoint_callback,
+            reduce_lr,
+            #tboard_callback,
+            early_stopping
+        ]
     )
     print('Done training')
     np.save(args.outputdir + '/' + network_id + '_history.npy',

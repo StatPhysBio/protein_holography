@@ -1,14 +1,19 @@
-from pyrosetta_hdf5_zernikegrams import get_hologram
-from preprocessor_hdf5_neighborhoods import PDBPreprocessor
 from argparse import ArgumentParser
-import numpy as np
-import h5py
-import sys
-sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
-from posterity import get_metadata,record_metadata
 import logging
 from progress.bar import Bar
+import sys
 import traceback
+
+import h5py
+import numpy as np
+
+
+from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import get_hologram
+from protein_holography.coordinates.preprocessor_hdf5_neighborhoods import PDBPreprocessor
+from protein_holography.utils.posterity import get_metadata,record_metadata
+
+
+
 
 def c(np_nh,L_max,ks,num_combi_channels,r_max):
 

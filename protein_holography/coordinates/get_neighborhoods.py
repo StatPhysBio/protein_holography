@@ -9,19 +9,24 @@
 #  - The neighborhood radius
 #  - "easy" flag to include central res
 #
-
-from pyrosetta_hdf5_neighborhoods import get_neighborhoods_from_protein,pad_neighborhoods
-from preprocessor_hdf5_proteins import PDBPreprocessor
 from argparse import ArgumentParser
-import numpy as np
-import h5py
-import sys
-sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
-from posterity import get_metadata,record_metadata
 import logging
-from progress.bar import Bar
+import sys
 import traceback
+
+import h5py
+import numpy as np
+from progress.bar import Bar
 from tqdm import tqdm
+
+
+sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
+from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
+    get_neighborhoods_from_protein,
+    pad_neighborhoods
+)
+from protein_holography.coordinates.preprocessor_hdf5_proteins import PDBPreprocessor
+from protein_holography.utils. posterity import get_metadata,record_metadata
 
 def c(np_protein,r_max,padded_length,unique_chains):
 
@@ -61,7 +66,7 @@ def get_neighborhoods(
     n = 0
 
 
-    max_atoms = 1700
+    max_atoms = 1300
     dt = np.dtype([
         ('res_id','S5',(6)),
         ('atom_names', 'S4', (max_atoms)),
@@ -79,6 +84,7 @@ def get_neighborhoods(
                          shape=(num_nhs,),
                          dtype=dt)
     print('calling parallel process')
+    print('Value of unique_chains = ',unique_chains)
     nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
@@ -124,9 +130,11 @@ def main():
     parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
     parser.add_argument('--num_nhs', dest='num_nhs', type=int, help='number of neighborhoods in protein set')
     parser.add_argument('--r_max', dest='r_max', type=float, help='radius of neighborhood')
-    parser.add_argument('--unique_chains', dest='unique_chains', type=bool, default=True, help='Only take one neighborhood per residue per unique chain')
+    parser.add_argument('--unique_chains', dest='unique_chains', action='store_true',default=False,help='Only take one neighborhood per residue per unique chain')
     
     args = parser.parse_args()
+
+    print('First value of unique_chains',args.unique_chains)
     get_neighborhoods(
         args.hdf5_in,
         args.protein_list,

@@ -62,10 +62,10 @@ if __name__ == "__main__":
 
     max_atoms = 50
     dt = np.dtype([
-        ('res_id','S5',(6)),
+        ('res_id','S5',(14)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', 'S5', (max_atoms,14)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),
@@ -78,7 +78,7 @@ if __name__ == "__main__":
                          shape=(args.num_nhs,),
                          dtype=dt)
     print('calling parallel process')
-    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(6)))
+    nhs = np.empty(shape=args.num_nhs,dtype=('S5',(14)))
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(args.hdf5_out,'r+') as f:
             for i,neighborhoods in enumerate(ds.execute(

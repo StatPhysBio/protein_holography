@@ -30,7 +30,7 @@ class Nonlinearity(tf.keras.layers.Layer):
 
         self.connection = connection
         self.self_square_connections = ['self','self_square','simple','simply_connected']
-        self.full_connections = ['all','full','fuly_connected']
+        self.full_connections = ['all','full','fully_connected']
         
     @tf.function
     def call(self, input,training=None):

@@ -42,6 +42,29 @@ def calculate_sasa(
     
     return atom_sasa
 
+def get_hb_counts(hbond_set,i):
+    # returns hbond counts in the form
+    #         n_ab_db,
+    #         n_db_ab,
+    #         n_ab_ds,
+    #         n_db_as,
+    #         n_as_db,
+    #         n_ds_ab,
+    #         n_as_ds,
+    #         n_ds_as
+
+    counts = np.zeros(8,dtype=int)
+    for hb in hbond_set.residue_hbonds(i):
+        ctrl_don = hb.don_res() == i
+        if ctrl_don:
+            ctrl_side = not hb.don_hatm_is_backbone()
+            nb_side = not hb.acc_atm_is_backbone()
+        else:
+            ctrl_side = not hb.acc_atm_is_backbone()
+            nb_side = not hb.don_hatm_is_backbone()
+        counts[4*ctrl_side + 2*nb_side + 1*ctrl_don] += 1
+    return counts
+
 def get_structural_info(
     pose
 ):
@@ -63,7 +86,6 @@ def get_structural_info(
     
     pi = pose.pdb_info()
     pdb = pi.name().split('.')[0][-4:].encode()
-    
     # get structural info from each residue in the protein
     for i in range(1,pose.size()+1):
         ss = pose.secstruct(i)
@@ -71,6 +93,7 @@ def get_structural_info(
         chain = pi.chain(i)
         resnum = str(pi.number(i)).encode()
         icode = pi.icode(i).encode()
+        #hbond_set = pose.get_hbonds()
         #chi1 = b''
         #print(aa)
         #if aa not in ['G','A','Z']:
@@ -88,7 +111,11 @@ def get_structural_info(
             sasa = atom_sasa.get(atom_id)
             curr_coords = coords_rows[k]
             charge = pose.residue_type(i).atom_charge(j)
-
+            #hb_counts = get_hb_counts(hbond_set,i)
+            #if len(atom_name) < 4:
+                #print('During gathering prcoess')
+                #print(pdb)
+                #print(atom_name)
             
             res_id =np.array([
                 aa,
@@ -97,6 +124,7 @@ def get_structural_info(
                 resnum,
                 icode,
                 ss,
+                #*hb_counts,
                 #chi1
             ],dtype='S5')
             
@@ -108,8 +136,18 @@ def get_structural_info(
             charges.append(charge)
             
             k += 1
+
+    #if len(atom_names[0]) < 4:
+    #    print('Pre-array-making')
+    #    print(pdb)
+    #   print(atom_names)
             
-    atom_names = np.array(atom_names,dtype='S4')
+    atom_names = np.array(atom_names,dtype='|S4')
+    if len(atom_names[0]) < 4:
+        print('Post-array-making')
+        print(pdb)
+        print(atom_names)
+        print(atom_names.dtype)
     elements = np.array(elements,dtype='S1')
     sasas = np.array(sasas)
     coords = np.array(coords)
@@ -122,7 +160,7 @@ def get_structural_info(
 def pad(arr,padded_length=100):
     #print('array = ',arr)
     # get dtype of input array
-    dt = arr[0].dtype
+    dt = arr.dtype
 
     # shape of sub arrays and first dimension (to be padded)
     shape = arr.shape[1:]
