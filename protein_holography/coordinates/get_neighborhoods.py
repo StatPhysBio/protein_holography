@@ -9,6 +9,7 @@
 #  - The neighborhood radius
 #  - "easy" flag to include central res
 #
+"""Gather neighborhoods from structural infos"""
 from argparse import ArgumentParser
 import logging
 import sys
@@ -54,9 +55,6 @@ def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
         print('Error with',np_protein[0])
         #print(traceback.format_exc())
         return (None,)
- 
-
-
     
     return (padded_neighborhoods)
 
@@ -91,7 +89,6 @@ def get_neighborhoods_from_dataset(
     parallelism : int
         Number of workers to use
     """
-    # get metadata
     metadata = get_metadata()
 
 
@@ -135,16 +132,14 @@ def get_neighborhoods_from_dataset(
                 if neighborhoods[0] is None:
                     del neighborhoods
                     bar.next()
-                    #n+=1
                     continue
-                
-                
+                    
                 neighborhoods_per_protein = neighborhoods.shape[0]
-                
                 f[protein_list][n:n+neighborhoods_per_protein] = neighborhoods
                 nhs[n:n+neighborhoods_per_protein] = neighborhoods['res_id']
                 n+=neighborhoods_per_protein
                 
+                # attempt to address memory issues. currently unsuccessfully
                 del neighborhoods
                 bar.next()
 
@@ -171,16 +166,14 @@ def main():
     parser.add_argument('--r_max', dest='r_max', type=float,
                         help='radius of neighborhood')
     parser.add_argument('--unique_chains', dest='unique_chains',
-                        action='store_true',
-                        default=False, 
-                        help='Only take one neighborhood
-                        per residue per unique chain')
+                        action='store_true',default=False, 
+                        help='Only take one neighborhood'
+                        'per residue per unique chain')
     parser.add_argument('--parallelism', dest='parallelism', type=int,
                         help='ouptput file name', default=4)
     
     args = parser.parse_args()
 
-    print('First value of unique_chains',args.unique_chains)
     get_neighborhoods_from_dataset(
         args.hdf5_in,
         args.protein_list,
