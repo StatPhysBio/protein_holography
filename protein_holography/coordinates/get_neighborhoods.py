@@ -19,34 +19,48 @@ import numpy as np
 from progress.bar import Bar
 from tqdm import tqdm
 
-
-sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
+#sys.path.append('/gscratch/spe/mpun/protein_holography/utils')
 from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
     get_neighborhoods_from_protein,
     pad_neighborhoods
 )
-from protein_holography.coordinates.preprocessor_hdf5_proteins import PDBPreprocessor
-from protein_holography.utils. posterity import get_metadata,record_metadata
+from protein_holography.coordinates.preprocessor_hdf5_proteins import (
+    PDBPreprocessor)
+from protein_holography.utils.posterity import get_metadata,record_metadata
 
-def c(np_protein,r_max,padded_length,unique_chains):
-
+def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
+    """
+    Gets padded neighborhoods associated with one structural info unit
+    
+    Parameters:
+    np_protein : np.ndarray
+        Array representation of a protein
+    r_max : float
+        Radius of the neighborhood
+    padded_length : int
+        Total length including padding
+    unique_chains : bool
+        Flag indicating whether chains with identical sequences should 
+        contribute unique neoighborhoods
+    """
     try:
-        neighborhoods = get_neighborhoods_from_protein(np_protein,r_max,uc=unique_chains)
-        padded_neighborhoods = pad_neighborhoods(neighborhoods,padded_length=padded_length)
+        neighborhoods = get_neighborhoods_from_protein(
+            np_protein,r_max,uc=unique_chains)
+        padded_neighborhoods = pad_neighborhoods(
+            neighborhoods,padded_length=padded_length)
         del neighborhoods
     except Exception as e:
         print(e)
         print('Error with',np_protein[0])
         #print(traceback.format_exc())
         return (None,)
-    #padded_neighborhoods = None
  
 
 
     
     return (padded_neighborhoods)
 
-def get_neighborhoods(
+def get_neighborhoods_from_dataset(
         hdf5_in,
         protein_list,
         num_nhs,
@@ -55,7 +69,28 @@ def get_neighborhoods(
         unique_chains,
         parallelism
 ):
-
+    """
+    Parallel retrieval of neighborhoods from structural info file and writing
+    to neighborhods hdf5_out file
+    
+    Parameters
+    ----------
+    hdf5_in : str
+        Path to hdf5 file containing structural info
+    protein_list : str
+        Name of the dataset within the hdf5 file to process
+    num_nhs : int
+        Number of neighborhoods to expect in total
+    r_max : float
+        Radius of the neighborhood
+    hdf5_out : str
+        Path to write the output file 
+    unique_chains : bool
+        Flag indicating whether or not chains with identical sequences should each
+        contribute neighborhoods
+    parallelism : int
+        Number of workers to use
+    """
     # get metadata
     metadata = get_metadata()
 
@@ -89,7 +124,7 @@ def get_neighborhoods(
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
             for i,neighborhoods in enumerate(ds.execute(
-                    c,
+                    get_padded_neighborhoods,
                     limit = None,
                     params = {
                         'r_max': r_max,
@@ -124,18 +159,29 @@ def get_neighborhoods(
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('--hdf5_out', dest='hdf5_out', type=str, help='ouptut hdf5 filename', required=True)
-    parser.add_argument('--protein_list', dest='protein_list', type=str, help='protein list within hdf5_in file', required=True)
-    parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
-    parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
-    parser.add_argument('--num_nhs', dest='num_nhs', type=int, help='number of neighborhoods in protein set')
-    parser.add_argument('--r_max', dest='r_max', type=float, help='radius of neighborhood')
-    parser.add_argument('--unique_chains', dest='unique_chains', action='store_true',default=False,help='Only take one neighborhood per residue per unique chain')
+    
+    parser.add_argument('--hdf5_in', dest='hdf5_in', type=str,
+                        help='hdf5 filename', default=False)
+    parser.add_argument('--hdf5_out', dest='hdf5_out', type=str,
+                        help='ouptut hdf5 filename', required=True)
+    parser.add_argument('--protein_list', dest='protein_list', type=str,
+                        help='protein list within hdf5_in file', required=True)
+    parser.add_argument('--num_nhs', dest='num_nhs', type=int,
+                        help='number of neighborhoods in protein set')
+    parser.add_argument('--r_max', dest='r_max', type=float,
+                        help='radius of neighborhood')
+    parser.add_argument('--unique_chains', dest='unique_chains',
+                        action='store_true',
+                        default=False, 
+                        help='Only take one neighborhood
+                        per residue per unique chain')
+    parser.add_argument('--parallelism', dest='parallelism', type=int,
+                        help='ouptput file name', default=4)
     
     args = parser.parse_args()
 
     print('First value of unique_chains',args.unique_chains)
-    get_neighborhoods(
+    get_neighborhoods_from_dataset(
         args.hdf5_in,
         args.protein_list,
         args.num_nhs,
