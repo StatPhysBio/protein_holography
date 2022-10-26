@@ -8,6 +8,7 @@ from typing import Tuple
 import h5py
 import numpy as np
 from progress.bar import Bar
+from pyrosetta.rosetta.core.pose import Pose
 
 from protein_holography.coordinates.pyrosetta_hdf5_proteins import (
     get_structural_info, pad_structural_info
@@ -15,8 +16,9 @@ from protein_holography.coordinates.pyrosetta_hdf5_proteins import (
 from protein_holography.coordinates.preprocessor_pdbs import PDBPreprocessor
 from protein_holography.utils.posterity import get_metadata,record_metadata
 
+
 def get_padded_structural_info(
-    pose: pyrosetta.rosetta.core.pose.Pose,padded_length: int=200000) -> Tuple[
+    pose: Pose, padded_length: int=200000) -> Tuple[
     bytes,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
     """
     Extract structural info used for holographic projection from PyRosetta pose.
