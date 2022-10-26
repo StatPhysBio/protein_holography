@@ -59,38 +59,32 @@ def get_padded_structural_info(
     return (pdb,*mat_structural_info)
 
 
-if __name__ == "__main__":
-    """Parallel processing of pdbs into structural info"""
+def get_structural_info_from_dataset(
+    hdf5_in: str,
+    pdb_list: str,
+    pdb_dir: str,
+    max_atoms: int,
+    hdf5_out: str,
+    parllelism: int    
+):
+    """
+    Parallel processing of pdbs into structural info
     
-    parser = ArgumentParser()
-    parser.add_argument(
-        '--hdf5_in', dest='hdf5_in', type=str,
-        help='hdf5 filename', required=True
-    )
-    parser.add_argument(
-        '--hdf5_out', dest='hdf5_out', type=str,
-        help='ouptut hdf5 filename', required=True
-    )
-    parser.add_argument(
-        '--pdb_list', dest='pdb_list', type=str,
-        help='dataset containing pdb list within hdf5_in file', required=True
-    )
-    parser.add_argument(
-        '--pdb_dir', dest='pdb_dir', type=str,
-        help='directory of pb files', required=True
-    )    
-    parser.add_argument(
-        '--parallelism', dest='parallelism', type=int,
-        help='ouptput file name', default=4
-    )
-    parser.add_argument(
-        '--max_atoms', dest='max_atoms', type=int,
-        help='max number of atoms per protein for padding purposes',
-        default=200000
-    )
-    
-    args = parser.parse_args()
-    
+    Parameters
+    ---------
+    hdf5_in : str
+        Path to hdf5 file containing pdb ids to process
+    pdb_list : str
+        Name of the dataset within hdf5_in to process
+    pdb_dir : str
+        Path where the pdb files are stored
+    max_atoms : int
+        Max number of atoms in a protein for padding purposes
+    hdf5_out : str
+        Path to hdf5 file to write
+    parlellism : int
+        Number of workers to use
+    """
     metadata = get_metadata()
     
     logging.basicConfig(level=logging.DEBUG)
@@ -139,3 +133,46 @@ if __name__ == "__main__":
                     print(e)
                 n+=1
                 bar.next()
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--hdf5_in', dest='hdf5_in', type=str,
+        help='hdf5 filename', required=True
+    )
+    parser.add_argument(
+        '--hdf5_out', dest='hdf5_out', type=str,
+        help='ouptut hdf5 filename', required=True
+    )
+    parser.add_argument(
+        '--pdb_list', dest='pdb_list', type=str,
+        help='dataset containing pdb list within hdf5_in file',
+        required=True
+    )
+    parser.add_argument(
+        '--pdb_dir', dest='pdb_dir', type=str,
+        help='directory of pb files', required=True
+    )    
+    parser.add_argument(
+        '--parallelism', dest='parallelism', type=int,
+        help='ouptput file name', default=4
+    )
+    parser.add_argument(
+        '--max_atoms', dest='max_atoms', type=int,
+        help='max number of atoms per protein for padding purposes',
+        default=200000
+    )
+    
+    args = parser.parse_args()
+
+    get_structural_info_from_dataset(
+        args.hdf5_in,
+        args.pdb_list,
+        args.pdb_dir,
+        args.max_atoms,
+        args.hdf5_out,
+        args.parallelism,
+    )
+
+if __name__ == "__main__":
+    main()
