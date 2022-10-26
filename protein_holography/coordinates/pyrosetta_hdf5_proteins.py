@@ -1,33 +1,39 @@
+"""Module for extracting structural info from pyrosetta pose"""
+
 from functools import partial
 import sys
-sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
+from typing import Tuple
+sys.path.append(
+    '/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
 
 import h5py
 import numpy as np
 import pyrosetta
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
+from pyrosetta.rosetta.core.pose import Pose
 
 def get_pose_residue_number(
-    pose,
-    chain,
-    resnum,
-    icode=' ',
-):
+    pose: Pose, 
+    chain: str, 
+    resnum: int, 
+    icode: str=' '
+) -> int:
+    """Translate pdb residue id to pyrosetta index"""
     return pose.pdb_info().pdb2pose(chain, resnum, icode)
 
 def get_pdb_residue_info(
-    pose,
-    resnum,
-):
+    pose : Pose, 
+    resnum : int
+) -> Tuple[str, int, str]:
+    """Translate pyrosetta index to pdb residue id"""
     pi = pose.pdb_info()
     return (pi.chain(resnum), pi.number(resnum), pi.icode(resnum))
 
 def calculate_sasa(
-    pose,
-    probe_radius=1.4
+    pose : Pose,
+    probe_radius : float=1.4
 ):
-    
-    
+    """Calculate SASA for a pose"""
     # structures for returning of sasa information
     all_atoms = pyrosetta.rosetta.core.id.AtomID_Map_bool_t()
     atom_sasa = pyrosetta.rosetta.core.id.AtomID_Map_double_t()
@@ -42,17 +48,38 @@ def calculate_sasa(
     
     return atom_sasa
 
-def get_hb_counts(hbond_set,i):
-    # returns hbond counts in the form
-    #         n_ab_db,
-    #         n_db_ab,
-    #         n_ab_ds,
-    #         n_db_as,
-    #         n_as_db,
-    #         n_ds_ab,
-    #         n_as_ds,
-    #         n_ds_as
-
+def get_hb_counts(
+    hbond_set,
+    i
+):
+    """
+    Classifies a pose's h-bonds by main- and side-chain linkages
+    
+    Parameters
+    ----------
+    hbond_set : 
+        The h-bond object from pyrosetta
+    i : int
+       
+    Returns
+    -------
+    np.ndarray
+        Float array of shape [8] where each entry is the number of
+        h-bonds where the central residue and the partner are categorized 
+        according to the donor/accceptor role and the backbone (bb) vs. 
+        side-chain (sc) location of the bond. Specifically, the array is 
+        organized as
+            central|partner
+            ---------------
+            acc-bb  don-bb
+            don-bb  acc-bb
+            acc-bb  don-sc
+            don-bb  acc-sc
+            acc-sc  don-bb
+            don-sc  acc-bb
+            acc-sc  don-sc
+            don-sc  acc-sc
+    """
     counts = np.zeros(8,dtype=int)
     for hb in hbond_set.residue_hbonds(i):
         ctrl_don = hb.don_res() == i
@@ -65,11 +92,26 @@ def get_hb_counts(hbond_set,i):
         counts[4*ctrl_side + 2*nb_side + 1*ctrl_don] += 1
     return counts
 
-def get_structural_info(
-    pose
-):
-    DSSP = pyrosetta.rosetta.protocols.moves.DsspMover()
-    DSSP.apply(pose)
+def get_structural_info(pose : Pose) -> 
+Tuple[str,
+      Tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
+    """
+    Extract structural information from pyrosetta pose
+    
+    Parameters
+    ----------
+    pose : pyrosetta.rosetta.core.pose.Pose
+        The pose created for the protein of interest
+      
+    Returns
+    -------
+    nested tuple of (bytes, (np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+      np.ndarray,np.ndarray)
+        This nested tuple contains the pdb name followed by arrays containing
+        the atom names, elements, residue ids, coordinates, SASAs, and charges 
+        for each atom in the protein.
+    """
+
     # lists for each type of information to obtain
     atom_names = []
     elements = []
@@ -80,7 +122,11 @@ def get_structural_info(
     
     k = 0
     
-    # extract coords and sasa from pyRosetta
+    # extract secondary structure for use in res ids
+    DSSP = pyrosetta.rosetta.protocols.moves.DsspMover()
+    DSSP.apply(pose)
+      
+    # extract physico-chemical information
     atom_sasa = calculate_sasa(pose)
     coords_rows = pose_coords_as_rows(pose)
     
@@ -88,11 +134,17 @@ def get_structural_info(
     pdb = pi.name().split('.')[0][-4:].encode()
     # get structural info from each residue in the protein
     for i in range(1,pose.size()+1):
-        ss = pose.secstruct(i)
+        
+        # these data will form the residue id
         aa = pose.sequence()[i-1]
         chain = pi.chain(i)
         resnum = str(pi.number(i)).encode()
         icode = pi.icode(i).encode()
+        ss = pose.secstruct(i)
+        
+        ## optional info to include in residue ids if analysis merits it
+        ## - hbond info
+        ## - chi1 angle
         #hbond_set = pose.get_hbonds()
         #chi1 = b''
         #print(aa)
