@@ -40,7 +40,7 @@ def get_padded_structural_info(
             float array of shape [max_atoms,3] representing the 3D Cartesian 
               coordinates of each atom
             float array of shape [max_atoms] storing the SASA of each atom
-            float array of shape [max_atoms] storing the partial charge of each atom       
+            float array of shape [max_atoms] storing the partial charge of each atom
     """
     if pose is None:
         print('pose is none')

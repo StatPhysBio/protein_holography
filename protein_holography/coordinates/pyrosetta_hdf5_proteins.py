@@ -2,15 +2,19 @@
 
 from functools import partial
 import sys
-from typing import Tuple
-sys.path.append(
-    '/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
+from typing import List,Tuple
 
 import h5py
 import numpy as np
 import pyrosetta
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
 from pyrosetta.rosetta.core.pose import Pose
+from pyrosetta.rosetta.core.id import (
+    AtomID,AtomID_Map_double_t,AtomID_Map_bool_t)
+from pyrosetta.rosetta.core.scoring import calc_per_atom_sasa
+from pyrosetta.rosetta.core.scoring.hbonds import HBondSet
+from pyrosetta.rosetta.protocols.moves import DsspMover
+from pyrosetta.rosetta.utility import vector1_double
 
 def get_pose_residue_number(
     pose: Pose, 
@@ -32,14 +36,15 @@ def get_pdb_residue_info(
 def calculate_sasa(
     pose : Pose,
     probe_radius : float=1.4
-):
+) -> AtomID_Map_double_t:
     """Calculate SASA for a pose"""
-    # structures for returning of sasa information
-    all_atoms = pyrosetta.rosetta.core.id.AtomID_Map_bool_t()
-    atom_sasa = pyrosetta.rosetta.core.id.AtomID_Map_double_t()
-    rsd_sasa = pyrosetta.rosetta.utility.vector1_double()
+    # pyrosetta structures for returning of sasa information
+    all_atoms = AtomID_Map_bool_t()
+    atom_sasa = AtomID_Map_double_t()
+    rsd_sasa = vector1_double()
     
-    pyrosetta.rosetta.core.scoring.calc_per_atom_sasa(
+    # use pyrosetta to calculate SASA per atom
+    calc_per_atom_sasa(
         pose,
         atom_sasa,
         rsd_sasa,
@@ -49,8 +54,8 @@ def calculate_sasa(
     return atom_sasa
 
 def get_hb_counts(
-    hbond_set,
-    i
+    hbond_set: HBondSet,
+    i: int
 ):
     """
     Classifies a pose's h-bonds by main- and side-chain linkages
@@ -92,9 +97,12 @@ def get_hb_counts(
         counts[4*ctrl_side + 2*nb_side + 1*ctrl_don] += 1
     return counts
 
-def get_structural_info(pose : Pose) -> 
-Tuple[str,
-      Tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
+def get_structural_info(pose : Pose) -> Tuple[
+    str,
+    Tuple[
+        np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray
+    ]
+]:
     """
     Extract structural information from pyrosetta pose
     
@@ -111,7 +119,6 @@ Tuple[str,
         the atom names, elements, residue ids, coordinates, SASAs, and charges 
         for each atom in the protein.
     """
-
     # lists for each type of information to obtain
     atom_names = []
     elements = []
@@ -123,7 +130,7 @@ Tuple[str,
     k = 0
     
     # extract secondary structure for use in res ids
-    DSSP = pyrosetta.rosetta.protocols.moves.DsspMover()
+    DSSP = DsspMover()
     DSSP.apply(pose)
       
     # extract physico-chemical information
@@ -154,22 +161,19 @@ Tuple[str,
         #    except:
         #        print(pdb,aa,chain,resnum)
         #        #print(chi1)
+        
         for j in range(1,len(pose.residue(i).atoms())+1):
 
             atom_name = pose.residue_type(i).atom_name(j)
             idx = pose.residue(i).atom_index(atom_name)
-            atom_id = (pyrosetta.rosetta.core.id.AtomID(idx,i))
+            atom_id = (AtomID(idx,i))
             element = pose.residue_type(i).element(j).name
             sasa = atom_sasa.get(atom_id)
             curr_coords = coords_rows[k]
             charge = pose.residue_type(i).atom_charge(j)
             #hb_counts = get_hb_counts(hbond_set,i)
-            #if len(atom_name) < 4:
-                #print('During gathering prcoess')
-                #print(pdb)
-                #print(atom_name)
             
-            res_id =np.array([
+            res_id = np.array([
                 aa,
                 pdb,
                 chain,
@@ -178,7 +182,7 @@ Tuple[str,
                 ss,
                 #*hb_counts,
                 #chi1
-            ],dtype='S5')
+            ], dtype='S5')
             
             atom_names.append(atom_name)
             elements.append(element)
@@ -188,18 +192,8 @@ Tuple[str,
             charges.append(charge)
             
             k += 1
-
-    #if len(atom_names[0]) < 4:
-    #    print('Pre-array-making')
-    #    print(pdb)
-    #   print(atom_names)
             
     atom_names = np.array(atom_names,dtype='|S4')
-    if len(atom_names[0]) < 4:
-        print('Post-array-making')
-        print(pdb)
-        print(atom_names)
-        print(atom_names.dtype)
     elements = np.array(elements,dtype='S1')
     sasas = np.array(sasas)
     coords = np.array(coords)
@@ -209,8 +203,22 @@ Tuple[str,
     return pdb,(atom_names,elements,res_ids,coords,sasas,charges)
 
 # given a matrix, pad it with empty array
-def pad(arr,padded_length=100):
-    #print('array = ',arr)
+def pad(
+    arr: np.ndarray,
+    padded_length: int=100
+) -> np.ndarray:
+    """
+    Pad an array long axis 0
+    
+    Parameters
+    ----------
+    arr : np.ndarray
+    padded_length : int
+
+    Returns
+    -------
+    np.ndarray
+    """
     # get dtype of input array
     dt = arr.dtype
 
@@ -226,10 +234,6 @@ def pad(arr,padded_length=100):
     # create padded array
     padded_shape = (padded_length,*shape)
     mat_arr = np.zeros(padded_shape, dtype=dt)
-    
-    # if type is string fill array with empty strings
-    #if np.issubdtype(bytes, dt):
-    #    mat_arr.fill(b'')
 
     # add data to padded array
     mat_arr[:orig_length] = np.array(arr)
@@ -237,13 +241,11 @@ def pad(arr,padded_length=100):
     return mat_arr
 
 def pad_structural_info(
-    ragged_structure,
-    padded_length=100
-):
-    
-    
+    ragged_structure: Tuple[np.ndarray, ...],
+    padded_length: int=100
+) -> List[np.ndarray]:
+    """Pad structural into arrays"""
     pad_custom = partial(pad,padded_length=padded_length)
-    
     mat_structure = list(map(pad_custom,ragged_structure))
 
     return mat_structure
