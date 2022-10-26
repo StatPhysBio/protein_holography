@@ -2,8 +2,6 @@ import os
 import sys
 import numpy as np
 
-sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
-
 import h5py
 import pyrosetta
 import pytest
