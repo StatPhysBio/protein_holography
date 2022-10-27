@@ -55,7 +55,7 @@ def get_padded_structural_info(
         print(e)
         print('Error with',pose.pdb_info().name())
         return (None,)
-    
+
     return (pdb,*mat_structural_info)
 
 
@@ -65,7 +65,7 @@ def get_structural_info_from_dataset(
     pdb_dir: str,
     max_atoms: int,
     hdf5_out: str,
-    parllelism: int    
+    parallelism: int    
 ):
     """
     Parallel processing of pdbs into structural info
@@ -89,7 +89,7 @@ def get_structural_info_from_dataset(
     
     logging.basicConfig(level=logging.DEBUG)
     
-    ds = PDBPreprocessor(args.hdf5_in,args.pdb_list,args.pdb_dir)
+    ds = PDBPreprocessor(hdf5_in,pdb_list,pdb_dir)
     bad_neighborhoods = []
     n = 0
 
@@ -105,27 +105,26 @@ def get_structural_info_from_dataset(
         ('charges', 'f8', (max_atoms)),
     ])
     
-    with h5py.File(args.hdf5_out,'w') as f:
-        f.create_dataset(args.pdb_list,
+    with h5py.File(hdf5_out,'w') as f:
+        f.create_dataset(pdb_list,
                          shape=(ds.size,),
                          dtype=dt)
     print("beginning data gathering process")    
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
-        with h5py.File(args.hdf5_out,'r+') as f:
+        with h5py.File(hdf5_out,'r+') as f:
             for i,structural_info in enumerate(ds.execute(
                     get_padded_structural_info,
                     limit = None,
                     params = {'padded_length': max_atoms},
-                    parallelism = args.parallelism)):
+                    parallelism = parallelism)):
                 if structural_info[0] is None:
                     bar.next()
                     n+=1
                     continue
                 (pdb,atom_names,elements,
                  res_ids,coords,sasas,charges) = (*structural_info,)
-
                 try:
-                    f[args.pdb_list][i] = (
+                    f[pdb_list][i] = (
                         pdb, atom_names, elements,
                         res_ids, coords, sasas, charges
                     )
