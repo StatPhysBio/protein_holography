@@ -1,4 +1,4 @@
-"""Unit test for cooridnate gathering routine"""
+"""Unit test for parellel cooridnate-gathering routine"""
 
 import os
 import sys
@@ -11,8 +11,8 @@ import pytest
 
 from protein_holography.coordinates.get_structural_info import (
     get_structural_info_from_dataset)
-from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
-    get_neighborhoods_from_protein,pad_neighborhoods)
+from protein_holography.coordinates.get_neighborhoods import (
+    get_neighborhoods_from_dataset)
 from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import get_hologram
 
 
@@ -36,26 +36,47 @@ with h5py.File('parallel_proteinG_true_neighborhoods.hdf5','r') as f:
 with h5py.File('parallel_proteinG_true_zernikegrams.hdf5','r') as f:
     true_zernikegrams = f[true_dataset][:]
 
-hdf5_in = 'parallel_proteinG_test_pdbs.hdf5'
-hdf5_out = 'parallel_proteinG_test_proteins.hdf5'
+
+#
+# structural info test
+#
+pdb_hdf5= 'parallel_proteinG_test_pdbs.hdf5'
+proteins_hdf5 = 'parallel_proteinG_test_proteins.hdf5'
 pdb_list = 'parallel_proteinG'
 pdb_dir = '.'
 max_atoms = padded_length
 parallelism = 4
 get_structural_info_from_dataset(
-    hdf5_in, pdb_list, pdb_dir, max_atoms, hdf5_out, parallelism
+    pdb_hdf5, pdb_list, pdb_dir, max_atoms, proteins_hdf5, parallelism
 )
 
          
 def test_structural_info():
-    with h5py.File(hdf5_out,'r') as f:
+    with h5py.File(proteins_hdf5,'r') as f:
         for i,test_structural_info in enumerate(f[pdb_list]):
             assert test_structural_info == true_structural_info[i]
 
-            
-# def test_neighborhoods():
 
-#     assert (test_padded_neighborhoods == true_neighborhoods).all()
+#
+# neighborhoods test
+#
+
+neighborhoods_hdf5 = 'parallel_protein_G_test_neighborhoods.hdf5'
+protein_list = 'parallel_proteinG'
+num_nhs = 280
+r_max = 10.
+unique_chains = True
+parallelism = 4
+get_neighborhoods_from_dataset(
+    proteins_hdf5, protein_list, num_nhs, r_max, neighborhoods_hdf5,
+    unique_chains, parallelism
+)
+def test_neighborhoods():
+    with h5py.File(neighborhoods_hdf5,'r') as f:
+        test_padded_neighborhoods = f[protein_list][:]
+        print('shape1:',test_padded_neighborhoods.shape)
+        print('shape2:',true_neighborhoods.shape)
+        assert (test_padded_neighborhoods == true_neighborhoods).all()
 
 # def test_zernikegrams():
 
