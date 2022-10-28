@@ -1,17 +1,20 @@
+"""Unit test for cooridnate gathering routine"""
+
 import os
 import sys
 import numpy as np
-
-sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
 
 import h5py
 import pyrosetta
 import pytest
 
 
-from protein_holography.coordinates.pyrosetta_hdf5_proteins import get_structural_info, pad_structural_info
-from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import get_neighborhoods_from_protein,pad_neighborhoods
-from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import get_hologram
+from protein_holography.coordinates.pyrosetta_hdf5_proteins import (
+    get_structural_info, pad_structural_info)
+from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
+    get_neighborhoods_from_protein,pad_neighborhoods)
+from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import (
+    get_hologram)
 
 test_pdb = '1PGA'
 padded_length = 200000
@@ -22,7 +25,8 @@ num_combi_channels = 147
 
 
     
-init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -ignore_zero_occupancy false -obey_ENDMDL 1'
+init_flags = ('-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all'
+              '-ignore_zero_occupancy false -obey_ENDMDL 1')
 pyrosetta.init(init_flags)
 
 with h5py.File('proteinG_structural_info.hdf5','r') as f: 
@@ -64,16 +68,13 @@ test_padded_neighborhoods = pad_neighborhoods(
 
          
 def test_structural_info_simple():
-    
     assert test_structural_info_arr == true_structural_info
 
             
 def test_neighborhoods():
-
     assert (test_padded_neighborhoods == true_neighborhoods).all()
 
 def test_zernikegrams():
-
     testing_zernikegrams = get_hologram(
         test_padded_neighborhoods[0],
         L_max,
@@ -81,5 +82,4 @@ def test_zernikegrams():
         num_combi_channels,
         r_max
     )
-
     assert (testing_zernikegrams == true_zernikegrams)
