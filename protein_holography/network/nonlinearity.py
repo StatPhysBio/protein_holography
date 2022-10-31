@@ -38,7 +38,6 @@ class Nonlinearity(tf.keras.layers.Layer):
         for L in range(self.L_MAX + 1):
             output[L] = []
         
-        print(self.connection)
         if self.connection in self.full_connections:
         # take products between all possible Ls and channels
             for l1 in range(self.L_MAX + 1):
