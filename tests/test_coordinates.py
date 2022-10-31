@@ -1,4 +1,4 @@
-"""Unit test for cooridnate gathering routine"""
+"""Unit test for cooridnate-gathering routine"""
 
 import os
 import sys

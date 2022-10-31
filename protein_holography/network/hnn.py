@@ -19,7 +19,7 @@ class hnn(tf.keras.Model):
     def __init__(self, L_MAX, hidden_l_dims, num_layers,
                  num_classes, cg_matrices, num_dense_layers,
                  reg_strength, dropout_rate, scale, connection, **kwargs):
-        print('hnn n classes = {}'.format(num_classes))
+
         # call to the super function tf.keras.Model
         super().__init__(**kwargs)
 
@@ -86,7 +86,6 @@ class hnn(tf.keras.Model):
             )
         )
         
-        print(temp_layers)
         # assignment of layers to a class feature
         self.layers_ = temp_layers
 

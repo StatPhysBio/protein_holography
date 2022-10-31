@@ -1,3 +1,5 @@
+"""Module for parallel gathering of zernikegrams"""
+
 from argparse import ArgumentParser
 import logging
 from progress.bar import Bar
@@ -7,15 +9,16 @@ import traceback
 import h5py
 import numpy as np
 
-
-from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import get_hologram
-from protein_holography.coordinates.preprocessor_hdf5_neighborhoods import PDBPreprocessor
+from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import (
+    get_hologram)
+from protein_holography.coordinates.preprocessor_hdf5_neighborhoods import (
+    PDBPreprocessor)
 from protein_holography.utils.posterity import get_metadata,record_metadata
 
 
 
 
-def c(np_nh,L_max,ks,num_combi_channels,r_max):
+def get_zernikegrams(np_nh,L_max,ks,num_combi_channels,r_max):
 
     #try:
     hgm = get_hologram(np_nh,L_max,ks,num_combi_channels,r_max)
@@ -31,7 +34,7 @@ def c(np_nh,L_max,ks,num_combi_channels,r_max):
 
     return hgm,np_nh['res_id']
 
-def get_zernikegrams(
+def get_zernikegrams_from_dataset(
         hdf5_in,
         neighborhood_list,
         num_nhs,
@@ -77,7 +80,7 @@ def get_zernikegrams(
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
             for i,hgm in enumerate(ds.execute(
-                    c,
+                    get_zernikegrams,
                     limit = None,
                     params = {'L_max': Lmax,
                               'ks':ks,
@@ -103,19 +106,33 @@ def get_zernikegrams(
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('--hdf5_out', dest='hdf5_out', type=str, help='ouptut hdf5 filename', required=True)
-    parser.add_argument('--neighborhood_list', dest='neighborhood_list', type=str, help='neighborhood list within hdf5_in file', required=True)
-    parser.add_argument('--parallelism', dest='parallelism', type=int, help='ouptput file name', default=4)
-    parser.add_argument('--hdf5_in', dest='hdf5_in', type=str, help='hdf5 filename', default=False)
-    parser.add_argument('--num_nhs', dest='num_nhs', type=int, help='number of neighborhoods in protein set')
-    parser.add_argument('--Lmax', dest='Lmax', type=int, help='maximu spherical frequency to use in projections')
-    parser.add_argument('-k', dest='ks', type=int, nargs='+')
-    parser.add_argument('--r_max', dest='r_max', type=float, help='maximum radius to use in projections')
-
+    parser.add_argument(
+        '--hdf5_out', dest='hdf5_out', type=str,
+        help='ouptut hdf5 filename', required=True)
+    parser.add_argument(
+        '--neighborhood_list', dest='neighborhood_list', type=str,
+        help='neighborhood list within hdf5_in file', required=True)
+    parser.add_argument(
+        '--parallelism', dest='parallelism', type=int,
+        help='ouptput file name', default=4)
+    parser.add_argument(
+        '--hdf5_in', dest='hdf5_in', type=str,
+        help='hdf5 filename', default=False)
+    parser.add_argument(
+        '--num_nhs', dest='num_nhs', type=int,
+        help='number of neighborhoods in protein set')
+    parser.add_argument(
+        '--Lmax', dest='Lmax', type=int,
+        help='maximu spherical frequency to use in projections')
+    parser.add_argument(
+        '-k', dest='ks', type=int, nargs='+')
+    parser.add_argument(
+        '--r_max', dest='r_max', type=float,
+        help='maximum radius to use in projections')
                         
     args = parser.parse_args()
 
-    get_zernikegrams(
+    get_zernikegrams_from_dataset(
         args.hdf5_in,
         args.neighborhood_list,
         args.num_nhs,
@@ -125,5 +142,6 @@ def main():
         args.hdf5_out,
         args.parallelism
     )
+    
 if __name__ == "__main__":
     main()

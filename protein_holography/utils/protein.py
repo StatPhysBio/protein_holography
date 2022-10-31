@@ -33,7 +33,7 @@ aa_to_one_letter = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E',
                         'LYS': 'K', 'LEU': 'L', 'MET': 'M', 'ASN': 'N',
                         'PRO': 'P', 'GLN': 'Q', 'ARG': 'R', 'SER':'S',
                         'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'}
-one_letter_to_add = {v: k for v, k in aa_to_one_letter.items()}
+one_letter_to_aa = {v: k for v, k in aa_to_one_letter.items()}
 
 #Mike uses this one
 aa_to_ind_size = {'CYS': 2, 'ILE': 8, 'GLN': 12, 'VAL': 6, 'LYS': 13,
@@ -209,6 +209,15 @@ ind_to_aa_cosine = {
     18 : 'PRO' ,
     19 : 'GLY' ,
 }
+
+background_freqs = {'ALA': 7.4, 'CYS': 3.3, 'ASP': 5.9, 'GLU': 3.7,
+                    'PHE': 4., 'GLY': 7.4, 'HIS': 2.9, 'ILE': 3.8,
+                    'LYS': 7.2, 'LEU': 7.6, 'MET': 1.8, 'ASN': 4.4,
+                    'PRO': 5., 'GLN': 5.8, 'ARG': 4.2, 'SER': 8.1,
+                    'THR': 6.2, 'VAL': 6.8, 'TRP': 1.3, 'TYR': 3.3}
+
+
+
 #for real one
 ind_to_aa_for_real_one_letter = dict()
 for i,aa in enumerate(ind_to_aa.values()):
