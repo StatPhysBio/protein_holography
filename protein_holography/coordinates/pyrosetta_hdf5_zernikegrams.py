@@ -1,3 +1,4 @@
+"""Zenrikegram projection"""
 from functools import partial
 import os
 
@@ -7,23 +8,31 @@ import scipy as sp
 from scipy import special
 os.sys.path.append('/gscratch/spe/mpun/protein_holography/fourier')
 
-def zernike_coeff_lm_new(r: np.ndarray, t: np.ndarray, p: np.ndarray, n: np.ndarray, r_max: np.float64,
-                         l: np.ndarray, m: np.ndarray, weights: np.ndarray) -> np.ndarray:
+def zernike_coeff_lm_new(
+        r: np.ndarray,
+        t: np.ndarray,
+        p: np.ndarray,
+        n: np.ndarray,
+        r_max: np.float64,
+        l: np.ndarray,
+        m: np.ndarray,
+        weights: np.ndarray
+) -> np.ndarray:
     """
     Compute Zerkinke coefficients.
 
-    This implementation uses vectorized operations and avoids unnecessary computation
-    when possible.
+    This implementation uses vectorized operations and avoids unnecessary 
+    computation when possible.
 
     Parameters
     ----------
-    r :  np.ndarray
+    r : np.ndarray
         Radii magnitudes.
     t : np.ndarray
         Theta values.
-    p :  np.ndarray
+    p : np.ndarray
         Phi values.
-    n :  np.ndarray
+    n : np.ndarray
 
     r_max : np.float64
 
