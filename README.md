@@ -10,6 +10,8 @@ The protein holography package implements efficient rotationally-equivariant enc
 
 ## Setup
 
+Most set up is automated. Certain packages require manual installation. Specifically pyrosetta requires manual installation. It is available to academics free of charge [here](https://www.pyrosetta.org/home/licensing-pyrosetta).
+
 ### via env file
 Create the protein holography conda environment by running
 
@@ -33,28 +35,29 @@ pip install -e .
 
 so you can test your changes.
 
-### Manual set up
+## Quick run
 
-## Components
+A bash script for complete processing of pdb files is located in `scripts`. This script requires simply a csv file with protein pdb IDs and, in addition to intermediate outputs, will produce predicted pseudoenergies and probabilities for all sites in a protein as well as the protein network energy for all chains in the proteins. See `scripts` for an example and more details.
 
-### pdb preprocessing module
+## Detailed overview
+
+### Components
+
+#### pdb preprocessing module
 
 The pdb preprocessing module filters pdbs by criteria such as imaging type (e.g., X-ray crystallography, cryo-EM, etc.), resolution, date of deposition, or any other metadata deposited with the structure.
 
-### Coordinates
+#### Coordinates
 The coordinate module features all preprocessing of pdb files and ultimately results in the holograms that are used in the H-CNN. Specifically, pdb files are processed in three steps. 
-#### chemical inference and coordinate extraction via PyRosetta
+##### chemical inference and coordinate extraction via PyRosetta
 First, pdb files are read into pyrosetta where hydrogen atom positions are inferred, partial charges are assigned, and solvent-accessible surface area (SASA) is calculated on a per atom basis.
-#### neighborhood segmentation
+##### neighborhood segmentation
 Second, neighborhoods of a fixed radius are extracted from each structure. 
-#### holographic projection
+##### holographic projection
 Third, each neighborhood is projected into Fourier space via the 3D zernike polynomials. 
 
-
-
-### H-CNN
+#### H-CNN
 
 The hnn class is a fully fourier neural network coded in tensorflow and operates on fully complex inputs.
 
-## Running the package
 
