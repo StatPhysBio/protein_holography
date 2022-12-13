@@ -11,7 +11,7 @@ the machine already, this should be specified to be 0.
 - The number of workers to use for all processing.
 
 
-For the exmaple provided, these variables are given as 
+For the example provided, these variables are given as 
 ```bash
 codedir="../protein_holography"
 datadir="../scripts"
@@ -21,3 +21,23 @@ project=quick_run
 subproject=example
 csv_file=$datadir/$project/pdbs.csv
 ```
+
+Running the example script will create the following output.
+
+### Predictions
+
+Predictions for all sites in the pdbs are stored in `$datadir/$project/energies/${subproject}_pseudoenergies.csv`. 
+Furthermore, a summary output of protein network energies (i.e. the sum of the pseudoenergies of the crystal protein sequence)
+is saved in `$datadir/$project/energies/${subproject}_pnEs.csv`.
+
+### Zernikegrams
+
+Zernikegrams are saved in `$datadir/$project/zernikegrams/${subproject}_zernikegrams.hdf5`.
+
+### Neighborhoods
+
+Neighborhoods are stored in `$datadir/$project/neighborhoods/${subproject}_neighborhoods.hdf5`.
+
+### Preprocessed proteins
+
+Preprocessed proteins are stored in `$datadir/$project/proteins/${subproject}_proteins.hdf5`.
