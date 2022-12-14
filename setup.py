@@ -1,4 +1,5 @@
 import setuptools
+import os
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -16,3 +17,7 @@ setuptools.setup(
     install_requires='',
     packages=setuptools.find_packages(),
 )
+
+os.chdir("protein_holography/utils")
+os.system("python download_model_weights.py")
+os.chdir("../..")
