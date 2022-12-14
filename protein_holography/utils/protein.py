@@ -222,3 +222,5 @@ background_freqs = {'ALA': 7.4, 'CYS': 3.3, 'ASP': 5.9, 'GLU': 3.7,
 ind_to_aa_for_real_one_letter = dict()
 for i,aa in enumerate(ind_to_aa.values()):
     ind_to_aa_for_real_one_letter[i] = aa_to_one_letter[aa]
+ind_to_ol_size = {x:aa_to_one_letter[ind_to_aa_size[x]] for x in range(20)}
+ol_to_ind_size = {val:key for key,val in ind_to_ol_size.items()}
