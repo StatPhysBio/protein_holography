@@ -13,6 +13,11 @@ scorefxn = pyrosetta.create_score_function('ref2015.wts')
 # this one should be used if we are letting bond lengths/angles vary, as in fastrelax above
 scorefxn_cartesian = pyrosetta.create_score_function('ref2015_cart.wts')
 
+default_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 '
+wet_flags = '-ignore_unrecognized_res 1' \
+            '-include_current -ex1 -ex2' \
+            '-ignore_waters 0'
+
 #max_atoms = 3000
 
 def c_struct_string(pose_name):
