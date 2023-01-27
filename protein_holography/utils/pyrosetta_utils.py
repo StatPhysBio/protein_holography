@@ -42,37 +42,44 @@ def c_struct_shear(tup):
     return c_struct(pose,padded_length=max_atoms)
 
 
-def c_struct_mut(tup):
-    pose_name = tup[0]
-    pose = pyrosetta.pose_from_pdb(pose_name)
+def c_struct_mut(tup,pose=None):
+    print('Getting psoe')
+    if pose==None:
+        pose_name = tup[0]
+        pose = pyrosetta.pose_from_pdb(pose_name)
     mutation_inds = tup[1]
     mutant_aas = tup[2]
+    print('Got info')
     if len(mutation_inds) == 0:
         return c_struct(pose,padded_length=max_atoms)
+    print('making seqpos')
     seqposs = [get_pose_residue_number(pose, 'A', x) for x in mutation_inds]
     # assert pose.residue(seqpos).name1() == 'L'
+    print('Making mutations')
     mutations = {seqpos:mutation for seqpos,mutation in zip(seqposs,mutant_aas)}
     make_mutations(mutations, pose)
-
+    print('Mutations made')
 #     # this one would be good for packing and minimization
 #     scorefxn = pyrosetta.create_score_function('ref2015.wts')
 
 #     # this one should be used if we are letting bond lengths/angles vary, as in fastrelax above
 #     scorefxn_cartesian = pyrosetta.create_score_function('ref2015_cart.wts')
-
+    print('relaxing')
     relaxation_sites = find_calpha_neighbors(seqposs, 10.0, pose)
-
+    print('repacking')
     repack_residues(scorefxn, relaxation_sites, pose)
-    
+
     return c_struct(pose,padded_length=max_atoms)
 
-def c_struct_mut_cartesian(tup):
+def c_struct_mut_cartesian(tup,max_atoms=3000,save_pdb=None):
+
     pose_name = tup[0]
     pose = pyrosetta.pose_from_pdb(pose_name)
     chain = tup[1]
     mutation_inds = tup[2]
     mutant_aas = tup[3]
     if len(mutation_inds) == 0:
+        print('---\n NO mutations made\n-----')
         return c_struct(pose,padded_length=max_atoms)
     seqposs = [get_pose_residue_number(pose, c, x) for x,c in zip(mutation_inds,chain)]
     # assert pose.residue(seqpos).name1() == 'L'
@@ -94,7 +101,9 @@ def c_struct_mut_cartesian(tup):
         relaxation_sites,
         pose
     )
-    
+    print(pose_name,'relaxed')
+    if save_pdb != None:
+        pose.dump_pdb(pose_name)
     return c_struct(pose,padded_length=max_atoms)
 
 
@@ -180,13 +189,23 @@ def find_calpha_neighbors(
     
     for i in range(1, pose.size()+1): # stupid Rosetta 1-indexing
         rsd1 = pose.residue(i)
-        rsd1_CA = rsd1.xyz("CA") # access by string is a *little* slow; could use integer indices
-        for j in core_positions:
-            rsd2 = pose.residue(j)
-            if rsd1_CA.distance_squared(rsd2.xyz("CA")) <= distance_threshold_squared:
-                nbr_positions.add(i)
-                break
+        try:
+            rsd1_CA = rsd1.xyz("CA") # access by string is a *little* slow; could use integer indices
+            for j in core_positions:
+                rsd2 = pose.residue(j)
+                if rsd1_CA.distance_squared(rsd2.xyz("CA")) <= distance_threshold_squared:
+                    nbr_positions.add(i)
+                    break
+        except:
+            continue
     return nbr_positions
+
+def get_pdb_residue_info(
+    pose,
+    resnum,
+):
+    pi = pose.pdb_info()
+    return (pi.chain(resnum), pi.number(resnum), pi.icode(resnum))
 
 def get_pose_residue_number(
     pose,
