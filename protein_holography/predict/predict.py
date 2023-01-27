@@ -23,6 +23,7 @@ from tensorflow.data import Dataset
 # global constants for loading network weights
 saved_network_dir = (
     '../model_weights/best_network/')
+
 saved_network = (
         'bsize=256_ch=chain_connection=full_d=10.0_dropout_rate=0.000549'
         '_hdim=14_k=0j+20+0j_l=5_learnrate=0.001_n_dense=2_netL=5_nlayers=4'

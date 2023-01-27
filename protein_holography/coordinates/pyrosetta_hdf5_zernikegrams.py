@@ -95,6 +95,8 @@ def zernike_coeff_lm_new(
 
     return coeffs
 
+
+
 def get_hologram(nh, L_max: int, ks, num_combi_channels, r_max: np.float64):
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(L_max + 1)])
     arr = np.zeros(shape=(1,),dtype=dt)
@@ -377,3 +379,90 @@ def get_backbone_hologram(nh,L_max,ks,num_combi_channels,r_max):
             
     return arr[0]
 
+
+def rbf_coeff_lm_new(
+        r: np.ndarray,
+        t: np.ndarray,
+        p: np.ndarray,
+        n: np.ndarray,
+        r_max: np.float64,
+        l: np.ndarray,
+        m: np.ndarray,
+        weights: np.ndarray
+) -> np.ndarray:
+    """
+    Compute Zerkinke coefficients.
+
+    This implementation uses vectorized operations and avoids unnecessary 
+    computation when possible.
+
+    Parameters
+    ----------
+    r : np.ndarray
+        Radii magnitudes.
+    t : np.ndarray
+        Theta values.
+    p : np.ndarray
+        Phi values.
+    n : np.ndarray
+
+    r_max : np.float64
+
+    l : np.ndarray
+
+    m :  np.ndarray
+
+    weights : np.ndarray
+
+
+    Returns
+    -------
+    coeffs : np.ndarray
+        Zerkine coefficients.
+    """
+    # Dimension of the Zernike polynomial.
+    D = 3.
+
+    # Constituent terms in the polynomial.
+    A = np.power(-1.0 + 0j, (n - l) / 2.)
+
+    B = np.sqrt(2. * n + D)
+    C = sp.special.binom((n + l + D) // 2 - 1, (n - l) // 2)
+
+    nl_unique_combs, nl_inv_map = np.unique(np.vstack([n, l]).T, axis=0,
+                                            return_inverse=True)
+
+    num_nl_combs = nl_unique_combs.shape[0]
+    n_hyp2f1_tile = np.tile(nl_unique_combs[:, 0], (r.shape[1], 1)).T
+    l_hyp2f1_tile = np.tile(nl_unique_combs[:, 1], (r.shape[1], 1)).T
+
+    E_unique = sp.special.hyp2f1(-(n_hyp2f1_tile - l_hyp2f1_tile) / 2.,
+                                 (n_hyp2f1_tile + l_hyp2f1_tile + D) /2.,
+                                 l_hyp2f1_tile + D / 2.,
+                                 r[:num_nl_combs, :]**2 / r_max**2)
+    E = E_unique[nl_inv_map]
+
+    l_unique, l_inv_map = np.unique(l, return_inverse=True)
+    l_power_tile = np.tile(l_unique, (r.shape[1], 1)).T
+    F_unique = np.power(r[:l_unique.shape[0]] / r_max, l_power_tile)
+    F = F_unique[l_inv_map]
+
+    # Spherical harmonic component.
+    lm_unique_combs, lm_inv_map = np.unique(np.vstack([l, m]).T, axis=0,
+                                            return_inverse=True)
+    num_lm_combs = lm_unique_combs.shape[0]
+    l_sph_harm_tile = np.tile(lm_unique_combs[:, 0], (p.shape[1], 1)).T
+    m_sph_harm_tile = np.tile(lm_unique_combs[:, 1], (p.shape[1], 1)).T
+
+    y_unique = np.conj(sp.special.sph_harm(m_sph_harm_tile, l_sph_harm_tile,
+                                           p[:num_lm_combs], t[:num_lm_combs]))
+    y = y_unique[lm_inv_map]
+
+    if True in np.isinf(E):
+        print('Error: E is inf')
+        print(f'E={E}, n={n}, l={l}, D={D}, r={np.array(r)}, rmax={r_max}')
+
+    # n indexes the combinations of n, l, m and N indexes the points in the point cloud
+    coeffs = A * B * C * np.einsum('cN,nN,nN,nN->cn', weights, E, F, y)
+
+    return coeffs
