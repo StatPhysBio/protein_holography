@@ -59,3 +59,17 @@ def load_network_from_weights(saved_network):
                     loss=loss_fn,
                     metrics =['categorical_accuracy'])
     return network
+
+
+
+def load_best_network():
+    saved_network = (
+        'bsize=256_ch=chain_connection=full_d=10.0_dropout_rate=0.000549_hdim=14'
+        '_k=0j+20+0j_l=5_learnrate=0.001_n_dense=2_netL=5_nlayers=4_opt=Adam'
+        '_proj=zgram_reg_strength=1.2e-16_rmax=10.0_scale=1.0'
+    )
+    network = load_network_from_weights(saved_network)
+    network.load_weights(os.path.join(
+        '/gscratch/scrubbed/mpun/data/casp12/network_output/best_network/',
+        saved_network))
+    return network
