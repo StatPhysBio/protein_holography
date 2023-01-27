@@ -2,9 +2,9 @@ import sys
 sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-317/')
 import pyrosetta
 from pyrosetta.rosetta import core, protocols, numeric, basic, utility
-from protein_holography.coordinates.get_structural_info import c as c_struct
-from protein_holography.coordinates.get_neighborhoods import c as c_nh
-from protein_holography.coordinates.get_zernikegrams import c as c_z
+from protein_holography.coordinates.get_structural_info import get_padded_structural_info as c_struct
+from protein_holography.coordinates.get_neighborhoods import get_padded_neighborhoods as c_nh
+from protein_holography.coordinates.get_zernikegrams import get_zernikegrams as c_z
 import numpy as np
 
 # this one would be good for packing and minimization
@@ -13,7 +13,12 @@ scorefxn = pyrosetta.create_score_function('ref2015.wts')
 # this one should be used if we are letting bond lengths/angles vary, as in fastrelax above
 scorefxn_cartesian = pyrosetta.create_score_function('ref2015_cart.wts')
 
-max_atoms = 3000
+default_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 '
+wet_flags = '-ignore_unrecognized_res 1' \
+            '-include_current -ex1 -ex2' \
+            '-ignore_waters 0'
+
+#max_atoms = 3000
 
 def c_struct_string(pose_name):
     pose = pyrosetta.pose_from_pdb(pose_name)
