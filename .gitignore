@@ -3,12 +3,13 @@ __pycache__/
 #data/
 output/
 *.py[cod]
-*$py.class
+v*$py.class
 *.pyc
 *.slurm
 
 #emacs autosave
 *~
+#*#
 
 # C extensions
 *.so
@@ -140,3 +141,7 @@ dmypy.json
 
 # Vim autosave
 *.swp
+
+#My notes
+*notes
+*notes.txt
