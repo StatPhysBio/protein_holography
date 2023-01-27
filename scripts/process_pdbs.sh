@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ~/.bashrc
-source ~/source_conda.sh
 codedir="../protein_holography"
 datadir="../scripts"
 download_pdbs=1 # 1 to download pdb files. 0 to skip download
@@ -21,6 +19,7 @@ then
     download_tag="--download --pdb_dir $datadir/$project/pdbs"
     echo -e "Pdbs downloaded\n"
 fi
+
 echo "Making data dirs for holographic steps"
 mkdir $datadir/$project/proteins
 mkdir $datadir/$project/neighborhoods
