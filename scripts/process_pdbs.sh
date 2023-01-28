@@ -7,6 +7,7 @@ parallelism=4
 project=quick_run
 subproject=example
 csv_file=$datadir/$project/pdbs.csv
+verbosity=1
 
 cd $codedir
 
@@ -29,9 +30,6 @@ echo -e "Directories creation attempted\n"
 
 echo "Making csv file of pdbs"
 python $codedir/coordinates/make_pdb_list.py --csv_file $csv_file \
-       --hdf5_file $datadir/$project/${subproject}_pdbs.hdf5 \
-       --dataset $subproject $download_tag 
-echo python $codedir/coordinates/make_pdb_list.py --csv_file $csv_file \
        --hdf5_file $datadir/$project/${subproject}_pdbs.hdf5 \
        --dataset $subproject $download_tag 
 echo -e "csv file made\n"
@@ -71,5 +69,6 @@ python predict/predict.py --input zgram \
        --zgram_file $datadir/$project/zernikegrams/${subproject}_zernikegrams.hdf5 \
        --zgram_dataset $subproject --outfile $datadir/$project/energies/${subproject}_pseudoenergies.csv \
        --pnE_outfile $datadir/$project/energies/${subproject}_pnEs.csv \
-       --network_dir $codedir/model_weights/best_network
+       --network_dir $codedir/model_weights/best_network \
+       --verbosity $verbosity
 echo -e "Done making predictions\n"

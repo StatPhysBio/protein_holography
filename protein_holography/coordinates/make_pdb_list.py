@@ -19,8 +19,6 @@ def csv_to_hdf5(
 ):
     """Create a pdb list hdf5 file from csv of pdbs"""
     df = pd.read_csv(csv_filename)
-    print(df['pdb'])
-    print('pdb dir is ',pdb_dir)
     
     max_length = df['pdb'].str.len().max()
     pdbs = np.array(df['pdb'],f'|S{max_length}')
@@ -40,7 +38,6 @@ def retrieve_pdbs(
     pdb_dir
 ):
     for pdb in pdb_list:
-        print('Curr dir = ',os.getcwd())
         urllib.request.urlretrieve(
             f"http://www.rcsb.org/pdb/files/{pdb}.pdb.gz", 
             os.path.join(pdb_dir,f"{pdb}.pdb.gz"))
@@ -63,13 +60,15 @@ def main():
     
     args = parser.parse_args()
     
-    print(
-        'Arguments are ',
-        args.csv_file,
-        args.hdf5_file,
-        args.dataset,
-        args.download,
-        args.pdb_dir
+    logging.debug(
+        'Arguments to csv creation script are ',
+        ' '.join([
+            args.csv_file,
+            args.hdf5_file,
+            args.dataset,
+            str(args.download),
+            args.pdb_dir
+        ])
     )
 
         

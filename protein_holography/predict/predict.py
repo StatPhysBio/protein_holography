@@ -19,6 +19,10 @@ from protein_holography.utils.protein import (
 from protein_holography.utils.pyrosetta_utils import c_struct
 from scipy.special import softmax
 from tensorflow.data import Dataset
+#import tensorflow as tf
+
+# set tf logging level
+logging.getLogger('tensorflow').setLevel('ERROR')
 
 # global constants for loading network weights
 saved_network_dir = (
@@ -61,7 +65,8 @@ def predict_from_zernikegrams(
     dataset: str,
     network_dir: str,
     network_name: str,
-    batchsize: int=64
+    batchsize: int=64,
+    verbosity: int=2,    
 ):
     """ 
     Predict on zernikegrams 
@@ -76,7 +81,10 @@ def predict_from_zernikegrams(
 
     nh_list, ds = tf_ds_from_hdf5(zgram_hdf5, dataset)
     
-    pseudoenergies = network.predict(ds.batch(batchsize))
+    pseudoenergies = network.predict(
+        ds.batch(batchsize),
+        verbose=verbosity
+    )
 
     return pseudoenergies, nh_list
         
@@ -229,7 +237,8 @@ def main():
         '--outfile', dest='outfile', type=str)
     parser.add_argument(
         '--pnE_outfile',dest='pnE_outfile',type=str)
-    
+    parser.add_argument(
+        '-v','--verbosity',dest='verbosity',type=int,default=2)
     args = parser.parse_args()
 
     if args.input == 'zgram':
@@ -237,7 +246,9 @@ def main():
         # TODO: check that zgram_dataset and zgram_file exist
         pseudoenergies, nh_list = predict_from_zernikegrams(
             args.zgram_file, args.zgram_dataset, 
-            args.network_dir, args.network_name)
+            args.network_dir, args.network_name,
+            args.verbosity
+        )
 
     if args.input == 'pdb':
         logging.info('Getting predictions from pdb file')

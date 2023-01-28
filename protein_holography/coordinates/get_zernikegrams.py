@@ -58,12 +58,8 @@ def get_zernikegrams_from_dataset(
     
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(Lmax + 1)])
 
-
-
-
-    print(dt)
-    print(num_nhs)
-    print('writing hdf5 file')
+    logging.info(f"Transforming {num_nhs} in zernikegrams")
+    logging.info("Writing hdf5 file")
     
     nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
     with h5py.File(hdf5_out,'w') as f:
@@ -74,9 +70,7 @@ def get_zernikegrams_from_dataset(
                          dtype=('S5',(6)),
                          shape=(num_nhs,)
         )
-    print('calling parallel process')
 
-    
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
             for i,hgm in enumerate(ds.execute(
@@ -96,12 +90,9 @@ def get_zernikegrams_from_dataset(
                 #print(hgm[0].shape)
                 bar.next()
 
-    print(len(nhs))
     #with h5py.File(hdf5_out,'r+') as f:
     #    f.create_dataset('nh_list',
     #                     data=nhs)
-    
-    print('Done with parallel computing')
 
 
 def main():

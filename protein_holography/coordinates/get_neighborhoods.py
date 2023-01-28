@@ -52,7 +52,7 @@ def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
         del neighborhoods
     except Exception as e:
         print(e)
-        print('Error with',np_protein[0])
+        logging.error('Error with',np_protein[0])
         #print(traceback.format_exc())
         return (None,)
     
@@ -60,8 +60,7 @@ def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
 
 def get_neighborhoods_from_dataset(
         hdf5_in,
-        protein_list,
-        num_nhs,
+        protein_list,        num_nhs,
         r_max,
         hdf5_out,
         unique_chains,
@@ -108,15 +107,15 @@ def get_neighborhoods_from_dataset(
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),
     ])
-    print(dt)
-    print(num_nhs)
-    print('writing hdf5 file')
+    
+    logging.info(f"Extracting {num_nhs} neighborhoods")
+    logging.info("Writing hdf5 file")
     with h5py.File(hdf5_out,'w') as f:
         f.create_dataset(protein_list,
                          shape=(num_nhs,),
                          dtype=dt)
-    print('calling parallel process')
-    print('Value of unique_chains = ',unique_chains)
+
+    logging.debug(f"Gathering unique chains {unique_chains}")
     nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
@@ -143,8 +142,6 @@ def get_neighborhoods_from_dataset(
                 del neighborhoods
                 bar.next()
 
-                
-    print(len(nhs))
     with h5py.File(hdf5_out,'r+') as f:
         f.create_dataset('nh_list',
                          data=nhs)

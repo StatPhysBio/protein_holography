@@ -45,8 +45,7 @@ class PDBPreprocessor:
         self.size = num_proteins
         self.__data = np.arange(num_proteins)
 
-        print(self.size)
-        print(self.hdf5_file)
+        logging.info(f"Preprocessed {self.size} proteins from {self.hdf5_file}")
         
     def count(self):
         return len(self.__data)
@@ -77,11 +76,17 @@ class PDBPreprocessor:
             ntasks = self.size
             num_cpus = os.cpu_count()
             chunksize = ntasks // num_cpus + 1
-            print('Data size = {}, cpus = {}, chunksize = {}'.format(ntasks,num_cpus,chunksize))
+            logging.debug(
+                f"Data size = {ntasks}, " \
+                f"cpus = {num_cpus}, " \
+                f"chunksize = {chunksize}")
 
             if chunksize > 16:
                 chunksize = 32
-            for res in pool.imap_unordered(process_data_hdf5, tqdm(data,total=len(data)), chunksize=chunksize):
+            for res in pool.imap_unordered(
+                    process_data_hdf5,
+                    data,
+                    chunksize=chunksize):
                 #if res:
                 yield res
 

@@ -109,7 +109,7 @@ def get_structural_info_from_dataset(
         f.create_dataset(pdb_list,
                          shape=(ds.size,),
                          dtype=dt)
-    print("beginning data gathering process")    
+
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
             for i,structural_info in enumerate(ds.execute(

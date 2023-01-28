@@ -22,7 +22,7 @@ def process_data(ind,hdf5_file,neighborhood_list):
     assert(process_data.callback)
     with h5py.File(hdf5_file,'r') as f:
         protein = f[neighborhood_list][ind]
-    #print('loaded protein',protein[0])
+
     return process_data.callback(protein, **process_data.params)
 
 def initializer(init, callback, params, init_params):
@@ -44,8 +44,7 @@ class PDBPreprocessor:
         self.size = num_neighborhoods
         self.__data = np.arange(num_neighborhoods)
 
-        print(self.size)
-        print(self.hdf5_file)
+        logging.info(f"Preprocessed {self.size} neighborhoods from {self.hdf5_file}")
         
     def count(self):
         return len(self.__data)
@@ -72,7 +71,10 @@ class PDBPreprocessor:
             ntasks = self.size
             num_cpus = os.cpu_count()
             chunksize = ntasks // num_cpus + 1
-            print('Data size = {}, cpus = {}, chunksize = {}'.format(ntasks,num_cpus,chunksize))
+            logging.debug(
+                f"Data size = {ntasks}, " \
+                f"cpus = {num_cpus}, " \
+                f"chunksize = {chunksize}")
 
             if chunksize > 100:
                 chunksize = 16
