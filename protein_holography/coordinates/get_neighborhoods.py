@@ -60,7 +60,8 @@ def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
 
 def get_neighborhoods_from_dataset(
         hdf5_in,
-        protein_list,        num_nhs,
+        protein_list,
+        num_nhs,
         r_max,
         hdf5_out,
         unique_chains,
