@@ -9,7 +9,7 @@ v*$py.class
 
 #emacs autosave
 *~
-#*#
+*#
 
 # C extensions
 *.so
