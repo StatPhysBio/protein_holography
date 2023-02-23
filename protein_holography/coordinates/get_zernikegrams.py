@@ -7,6 +7,7 @@ import sys
 import traceback
 
 import h5py
+from hdf5plugin import LZ4
 import numpy as np
 
 from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import (
@@ -42,7 +43,8 @@ def get_zernikegrams_from_dataset(
         Lmax,
         ks,
         hdf5_out,
-        parallelism    
+        parallelism,
+        compression=LZ4()    
 ):
         
     # get metadata
@@ -65,10 +67,12 @@ def get_zernikegrams_from_dataset(
     with h5py.File(hdf5_out,'w') as f:
         f.create_dataset(neighborhood_list,
                          shape=(num_nhs,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=compression)
         f.create_dataset('nh_list',
                          dtype=('S5',(6)),
-                         shape=(num_nhs,)
+                         shape=(num_nhs,),
+                         compression=compression
         )
 
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
