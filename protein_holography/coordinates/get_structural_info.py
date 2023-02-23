@@ -92,14 +92,15 @@ def get_structural_info_from_dataset(
     ds = PDBPreprocessor(hdf5_in,pdb_list,pdb_dir)
     bad_neighborhoods = []
     n = 0
-
+    L = np.max([ds.pdb_name_length, 5])
+    logging.info(f"Maximum pdb name L = {L}")
     
     max_atoms = 200000
     dt = np.dtype([
-        ('pdb','S4',()),
+        ('pdb',f'S{L}',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', f'S{L}', (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),

@@ -38,6 +38,8 @@ class PDBPreprocessor:
 
         with h5py.File(hdf5_file,'r') as f:
             num_neighborhoods = np.array(f[neighborhood_list].shape[0])
+            self.pdb_name_length = np.max(
+                list(map(len, f[neighborhood_list]["res_id"][:,1])))
 
         self.neighborhood_list = neighborhood_list
         self.hdf5_file = hdf5_file

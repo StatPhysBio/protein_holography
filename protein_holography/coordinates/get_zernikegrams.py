@@ -50,24 +50,26 @@ def get_zernikegrams_from_dataset(
 
     
     logging.basicConfig(level=logging.DEBUG)
-    ds = PDBPreprocessor(hdf5_in,neighborhood_list)
+    ds = PDBPreprocessor(hdf5_in, neighborhood_list)
     bad_neighborhoods = []
     n = 0
     channels = ['C','N','O','S','H','SASA','charge']
     num_combi_channels = len(channels) * len(ks)
     
+    L = np.max([5, ds.pdb_name_length])
+
     dt = np.dtype([(str(l),'complex64',(num_combi_channels,2*l+1)) for l in range(Lmax + 1)])
 
     logging.info(f"Transforming {num_nhs} in zernikegrams")
     logging.info("Writing hdf5 file")
     
-    nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
+    nhs = np.empty(shape=num_nhs,dtype=(f'S{L}',(6)))
     with h5py.File(hdf5_out,'w') as f:
         f.create_dataset(neighborhood_list,
                          shape=(num_nhs,),
                          dtype=dt)
         f.create_dataset('nh_list',
-                         dtype=('S5',(6)),
+                         dtype=(f'S{L}',(6)),
                          shape=(num_nhs,)
         )
 

@@ -39,12 +39,13 @@ class PDBPreprocessor:
 
         with h5py.File(hdf5_file,'r') as f:
             num_proteins = np.array(f[protein_list].shape[0])
+            self.pdb_name_length = np.max(list(map(len, f[protein_list]["pdb"])))
 
         self.protein_list = protein_list
         self.hdf5_file = hdf5_file
         self.size = num_proteins
         self.__data = np.arange(num_proteins)
-
+        
         logging.info(f"Preprocessed {self.size} proteins from {self.hdf5_file}")
         
     def count(self):

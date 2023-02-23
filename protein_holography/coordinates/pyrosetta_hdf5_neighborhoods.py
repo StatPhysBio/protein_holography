@@ -199,12 +199,13 @@ def pad_neighborhood(res_id: bytes, ragged_structure, padded_length: int=100) ->
     """
     pad_custom = partial(pad,padded_length=padded_length)
 
+    res_id_dt = res_id.dtype
     max_atoms=padded_length
     dt = np.dtype([
-        ('res_id', 'S5', (6)),
+        ('res_id', res_id_dt, (6)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', res_id_dt, (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),

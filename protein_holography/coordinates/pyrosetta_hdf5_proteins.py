@@ -1,6 +1,7 @@
 """Module for extracting structural info from pyrosetta pose"""
 
 from functools import partial
+import logging
 from pathlib import Path
 import sys
 from typing import List,Tuple
@@ -140,7 +141,8 @@ def get_structural_info(pose : Pose) -> Tuple[
     
     pi = pose.pdb_info()
     pdb = Path(pi.name()).stem.encode()
-    
+    L = len(pdb)
+    logging.info(f"pdb name in protein routein {pdb}")
     # get structural info from each residue in the protein
     for i in range(1,pose.size()+1):
         
@@ -184,7 +186,7 @@ def get_structural_info(pose : Pose) -> Tuple[
                 ss,
                 #*hb_counts,
                 #chi1
-            ], dtype='S5')
+            ], dtype=f'S{L}')
             
             atom_names.append(atom_name)
             elements.append(element)

@@ -96,14 +96,14 @@ def get_neighborhoods_from_dataset(
     ds = PDBPreprocessor(hdf5_in,protein_list)
     bad_neighborhoods = []
     n = 0
-
+    L = np.max([ds.pdb_name_length, 5])
 
     max_atoms = 1300
     dt = np.dtype([
-        ('res_id','S5',(6)),
+        ('res_id', f'S{L}',(6)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S5', (max_atoms,6)),
+        ('res_ids', f'S{L}', (max_atoms,6)),
         ('coords', 'f8', (max_atoms,3)),
         ('SASAs', 'f8', (max_atoms)),
         ('charges', 'f8', (max_atoms)),

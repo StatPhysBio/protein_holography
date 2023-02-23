@@ -68,6 +68,7 @@ class PDBPreprocessor:
         self.pdb_dir = pdb_dir
         self.__data = pdb_list
         self.size = len(pdb_list)
+        self.pdb_name_length = np.max(list(map(len, self.__data)))
         
     def count(self) -> int:
         """
