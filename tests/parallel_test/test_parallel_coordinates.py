@@ -71,12 +71,14 @@ def test_structural_info():
         for i,test_structural_info in enumerate(f[dataset]):
             assert test_structural_info == true_structural_info[i]
     print(f"Size of protein file:{os.path.getsize(proteins_hdf5) / 1e6:.2f} MB")
-    os.system(f"rm {proteins_hdf5}")
+    # os.system(f"rm {proteins_hdf5}")
 #
 # neighborhoods test
 #
 
-neighborhoods_hdf5 = 'parallel_proteinG_test_neighborhoods.hdf5'
+neighborhoods_hdf5 = os.path.join(
+    phdir, "tests/parallel_test",
+    'parallel_proteinG_test_neighborhoods.hdf5')
 num_nhs = 280
 r_max = 10.
 unique_chains = True
@@ -103,7 +105,7 @@ def test_neighborhoods():
                          test_padded_neighborhoods[field]
                     ).all()
     print(f"Size of nh file:{os.path.getsize(neighborhoods_hdf5) / 1e6:.2f} MB")
-    os.system(f"rm {neighborhoods_hdf5}")
+    # os.system(f"rm {neighborhoods_hdf5}")
         
 #
 # zernikegrams test
@@ -112,7 +114,9 @@ def test_neighborhoods():
 L_max = 5
 L_max = 5
 ks = np.arange(21)
-zgram_hdf5 = 'parallel_proteinG_test_zernikegrams.hdf5'
+zgram_hdf5 = os.path.join(
+    phdir, "tests/parallel_test", 
+    'parallel_proteinG_test_zernikegrams.hdf5')
 #num_combi_channels = 147
 get_zernikegrams_from_dataset(
     neighborhoods_hdf5,
@@ -130,7 +134,7 @@ def test_zernikegrams():
         testing_zernikegrams = f[dataset][:]
     assert (testing_zernikegrams == true_zernikegrams).all()
     print(f"Size of zgram file:{os.path.getsize(zgram_hdf5) / 1e6:.2f} MB")
-    os.system(f"rm {zgram_hdf5}")
+    # os.system(f"rm {zgram_hdf5}")
 
 
 
