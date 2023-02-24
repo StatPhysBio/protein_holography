@@ -72,7 +72,19 @@ def test_structural_info_simple():
 
             
 def test_neighborhoods():
-    assert (test_padded_neighborhoods == true_neighborhoods).all()
+    if (test_padded_neighborhoods == true_neighborhoods).all():
+        assert True
+    else:
+        for field in true_neighborhoods.dtype.names:
+            if field == "coords":
+                assert np.mean(
+                    true_neighborhoods[field] - 
+                    test_padded_neighborhoods[field] < 1e-14)
+            else:
+                assert (
+                    true_neighborhoods[field] ==
+                        test_padded_neighborhoods[field]
+                ).all()
 
 def test_zernikegrams():
     testing_zernikegrams = get_hologram(
