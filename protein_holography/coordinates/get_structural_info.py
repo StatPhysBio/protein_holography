@@ -6,6 +6,7 @@ import sys
 from typing import Tuple
 
 import h5py
+from hdf5plugin import LZ4
 import numpy as np
 from progress.bar import Bar
 from pyrosetta.rosetta.core.pose import Pose
@@ -65,7 +66,8 @@ def get_structural_info_from_dataset(
     pdb_dir: str,
     max_atoms: int,
     hdf5_out: str,
-    parallelism: int    
+    parallelism: int,
+    compression=LZ4()   
 ):
     """
     Parallel processing of pdbs into structural info
@@ -109,7 +111,9 @@ def get_structural_info_from_dataset(
     with h5py.File(hdf5_out,'w') as f:
         f.create_dataset(pdb_list,
                          shape=(ds.size,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=compression
+                         )
 
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:

@@ -3,12 +3,13 @@
 import os
 import sys
 import numpy as np
+from pathlib import Path
 
 import h5py
 import pyrosetta
 import pytest
 
-
+import protein_holography
 from protein_holography.coordinates.pyrosetta_hdf5_proteins import (
     get_structural_info, pad_structural_info)
 from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
@@ -16,7 +17,9 @@ from protein_holography.coordinates.pyrosetta_hdf5_neighborhoods import (
 from protein_holography.coordinates.pyrosetta_hdf5_zernikegrams import (
     get_hologram)
 
-test_pdb = '1PGA'
+phdir = Path(protein_holography.__file__).parents[1]
+
+test_pdb = os.path.join(phdir, "tests/coordinates", '1PGA')
 padded_length = 200000
 r_max = 10.
 L_max = 5
@@ -29,11 +32,26 @@ init_flags = ('-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all'
               '-ignore_zero_occupancy false -obey_ENDMDL 1')
 pyrosetta.init(init_flags)
 
-with h5py.File('proteinG_structural_info.hdf5','r') as f: 
+with h5py.File(
+    os.path.join(
+        phdir,
+        "tests/coordinates",
+        'proteinG_structural_info.hdf5'),
+    'r') as f: 
     true_structural_info = f['proteinG'][0]
-with h5py.File('proteinG_neighborhoods.hdf5','r') as f:
+with h5py.File(
+    os.path.join(
+        phdir,
+        "tests/coordinates",
+        'proteinG_neighborhoods.hdf5'),
+    'r') as f:
     true_neighborhoods = f['proteinG'][:]
-with h5py.File('proteinG_zernikegrams.hdf5','r') as f:
+with h5py.File(
+    os.path.join(
+        phdir,
+        "tests/coordinates",
+        'proteinG_zernikegrams.hdf5'),
+    'r') as f:
     true_zernikegrams = f['proteinG'][0]
 
 test_pose = pyrosetta.pose_from_pdb(test_pdb + '.pdb')

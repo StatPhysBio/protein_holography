@@ -16,6 +16,7 @@ import sys
 import traceback
 
 import h5py
+from hdf5plugin import LZ4
 import numpy as np
 from progress.bar import Bar
 from tqdm import tqdm
@@ -65,7 +66,8 @@ def get_neighborhoods_from_dataset(
         r_max,
         hdf5_out,
         unique_chains,
-        parallelism
+        parallelism,
+        compression=LZ4()
 ):
     """
     Parallel retrieval of neighborhoods from structural info file and writing
@@ -114,7 +116,8 @@ def get_neighborhoods_from_dataset(
     with h5py.File(hdf5_out,'w') as f:
         f.create_dataset(protein_list,
                          shape=(num_nhs,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=compression)
 
     logging.debug(f"Gathering unique chains {unique_chains}")
     nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
