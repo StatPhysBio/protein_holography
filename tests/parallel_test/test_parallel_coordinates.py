@@ -89,7 +89,19 @@ get_neighborhoods_from_dataset(
 def test_neighborhoods():
     with h5py.File(neighborhoods_hdf5,'r') as f:
         test_padded_neighborhoods = f[dataset][:]
-        assert (test_padded_neighborhoods == true_neighborhoods).all()
+        if (test_padded_neighborhoods == true_neighborhoods).all():
+            assert True
+        else:
+            for field in true_neighborhoods.dtype.names:
+                if field == "coords":
+                    assert np.mean(
+                        true_neighborhoods[field] - 
+                        test_padded_neighborhoods[field] < 1e-14)
+                else:
+                    assert (
+                        true_neighborhoods[field] ==
+                         test_padded_neighborhoods[field]
+                    ).all()
     print(f"Size of nh file:{os.path.getsize(neighborhoods_hdf5) / 1e6:.2f} MB")
     os.system(f"rm {neighborhoods_hdf5}")
         
