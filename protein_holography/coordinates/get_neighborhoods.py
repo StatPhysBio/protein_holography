@@ -118,6 +118,7 @@ def get_neighborhoods_from_dataset(
                          shape=(num_nhs,),
                          dtype=dt,
                          compression=compression)
+        record_metadata(metadata, f[protein_list])
 
     logging.debug(f"Gathering unique chains {unique_chains}")
     nhs = np.empty(shape=num_nhs,dtype=('S5',(6)))
@@ -149,6 +150,7 @@ def get_neighborhoods_from_dataset(
     with h5py.File(hdf5_out,'r+') as f:
         f.create_dataset('nh_list',
                          data=nhs)
+        record_metadata(metadata, f["nh_list"])
     
     print('Done with parallel computing')
 

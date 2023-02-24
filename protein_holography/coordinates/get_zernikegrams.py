@@ -76,6 +76,8 @@ def get_zernikegrams_from_dataset(
                          shape=(num_nhs,),
                          compression=compression
         )
+        record_metadata(metadata, f[neighborhood_list])
+        record_metadata(metadata, f["nh_list"])
 
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(hdf5_out,'r+') as f:
