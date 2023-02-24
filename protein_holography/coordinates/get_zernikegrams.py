@@ -73,7 +73,7 @@ def get_zernikegrams_from_dataset(
                          compression=compression)
         f.create_dataset('nh_list',
                          dtype=(f'S{L}',(6)),
-                         shape=(num_nhs,)
+                         shape=(num_nhs,),
                          compression=compression
         )
 
