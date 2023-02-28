@@ -142,7 +142,7 @@ def get_structural_info(pose : Pose) -> Tuple[
     pi = pose.pdb_info()
     pdb = Path(pi.name()).stem.encode()
     L = len(pdb)
-    logging.info(f"pdb name in protein routein {pdb}")
+    logging.debug(f"pdb name in protein routine {pdb}")
     # get structural info from each residue in the protein
     for i in range(1,pose.size()+1):
         

@@ -67,7 +67,8 @@ def get_structural_info_from_dataset(
     max_atoms: int,
     hdf5_out: str,
     parallelism: int,
-    compression=LZ4()   
+    compression=LZ4(),
+    logging_level=logging.INFO
 ):
     """
     Parallel processing of pdbs into structural info
@@ -89,7 +90,7 @@ def get_structural_info_from_dataset(
     """
     metadata = get_metadata()
     
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging_level)
     
     ds = PDBPreprocessor(hdf5_in,pdb_list,pdb_dir)
     bad_neighborhoods = []
@@ -167,6 +168,11 @@ def main():
         help='max number of atoms per protein for padding purposes',
         default=200000
     )
+    parser.add_argument(
+        '--logging', dest='logging', type=str,
+        help='logging level',
+        default="INFO"
+    )
     
     args = parser.parse_args()
 
@@ -177,6 +183,7 @@ def main():
         args.max_atoms,
         args.hdf5_out,
         args.parallelism,
+        logging_level=args.logging
     )
 
 if __name__ == "__main__":

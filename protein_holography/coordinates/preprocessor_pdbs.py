@@ -36,7 +36,7 @@ def process_data(pdb: str, pdb_dir: str) -> np.ndarray:
     assert(process_data.callback)
 
     pdb = pdb.decode('utf-8')
-    for ext in [".pdb", ".cif"]:
+    for ext in [".cif",   ".pdb"]:
         try:
             logging.debug(f"Getting pose for {pdb}{ext}")
             pdb_file = os.path.join(pdb_dir, pdb) + ext
@@ -48,7 +48,7 @@ def process_data(pdb: str, pdb_dir: str) -> np.ndarray:
     else:
         logging.warning(f'Pose could not be created for protein {pdb_file}.')
         return process_data.callback(None,**process_data.params)
-    print('pdb is ',pdb,pose.pdb_info().name())
+    logging.debug('pdb is ',pdb,pose.pdb_info().name())
     return process_data.callback(pose, **process_data.params)
 
 def initializer(init, callback: Callable, params, init_params):
