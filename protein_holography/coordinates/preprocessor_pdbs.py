@@ -36,21 +36,19 @@ def process_data(pdb: str, pdb_dir: str) -> np.ndarray:
     assert(process_data.callback)
 
     pdb = pdb.decode('utf-8')
-    #pdb_file = '/gscratch/scrubbed/mpun/data/T4/pdbs/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/training_30/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/stf/mpun/data/casp12/pdbs/validation/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/scrubbed/mpun/data/DunhamBeltrao/pdbs/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/scrubbed/mpun/data/CoV2_ACE2/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/stf/mpun/data/TCRStructure/pdbs/' + pdb + '.pdb'
-    #pdb_file = '/gscratch/stf/mpun/data/proteinG/' + pdb + '.pdb'
-    pdb_file = os.path.join(pdb_dir, pdb) + '.pdb'
-    try:
-        #print('Getting pose for pdb',pdb)
-        pose = pyrosetta.pose_from_pdb(pdb_file)
-    except:
-        print(f'Pose could not be created for protein {pdb_file}.')
+    for ext in [".pdb", ".cif"]:
+        try:
+            logging.debug(f"Getting pose for {pdb}{ext}")
+            pdb_file = os.path.join(pdb_dir, pdb) + ext
+            pose = pyrosetta.pose_from_pdb(pdb_file)
+            pose.pdb_info().name(pdb)
+            break
+        except:
+            logging.debug(f"Filetype {ext} could not be found for {pdb}")
+    else:
+        logging.warning(f'Pose could not be created for protein {pdb_file}.')
         return process_data.callback(None,**process_data.params)
-    #print('pdb is ',pdb,pose.pdb_info().name())
+    print('pdb is ',pdb,pose.pdb_info().name())
     return process_data.callback(pose, **process_data.params)
 
 def initializer(init, callback: Callable, params, init_params):
