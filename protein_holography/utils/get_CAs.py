@@ -1,7 +1,9 @@
+import sys
+
 import h5py
-import sys
+import hdf5plugin
 import numpy as np
-import sys
+
 
 def printname(x):
     print(x)
