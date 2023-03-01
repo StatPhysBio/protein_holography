@@ -8,12 +8,17 @@
 
 The protein holography package implements efficient rotationally-equivariant encoding of protein structure and minimal rotationally-equivariant processing of protein microenvironements via H-CNN. 
 
-## Setup
+## Installation
 
-Most set up is automated. Certain packages require manual installation. Specifically pyrosetta requires manual installation. It is available to academics free of charge [here](https://www.pyrosetta.org/home/licensing-pyrosetta).
+### pyRosetta
 
-### via env file
-Create the protein holography conda environment by running
+This package is dependent on pyrosetta which can be downloaded from [here](https://www.pyrosetta.org/downloads#h.6vttn15ac69d). A license is available at no cost to academics and can be obtained [here](https://www.pyrosetta.org/home/licensing-pyrosetta).
+
+The env.yml file should be edited upon download with the local path to the wheel file to install.
+
+### setup
+
+Once the pyrosetta wheel file has been downloaded and the path has been specified in the env.yml file, one can create the protein holography conda environment by running
 
 ```bash
 conda env create -f env.yml
@@ -34,6 +39,8 @@ pip install -e .
 ```
 
 so you can test your changes.
+
+
 
 ## Quick run
 
