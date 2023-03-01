@@ -1,8 +1,12 @@
-import h5py
+"""Module to extract amino acids in spherical coords from a protein"""
 from functools import partial
+
+import h5py
+import hdf5plugin
 import numpy as np
 from sklearn.neighbors import KDTree
-import geo2 as geo
+
+from protein_holography.utils import geo
 
 # slice array along given indices
 def slice_array(arr,inds):

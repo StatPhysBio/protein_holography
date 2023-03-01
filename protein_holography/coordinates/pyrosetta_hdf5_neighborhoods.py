@@ -5,7 +5,7 @@ import h5py
 import numpy as np
 from sklearn.neighbors import KDTree
 
-from protein_holography.coordinates import geo2 as geo
+from protein_holography.utils import geo
 
 # given a set of neighbor coords, slice all info in the npProtein along neighbor inds
 def get_neighborhoods(neighbor_inds: np.ndarray, structural_info: np.ndarray) -> List[np.ndarray]:
