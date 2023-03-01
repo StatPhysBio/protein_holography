@@ -40,7 +40,9 @@ pip install -e .
 
 so you can test your changes.
 
+### Testing install
 
+The installation can be tested by running `pytest tests`. Currently only the preprocessing pipeline is tested. Testing will be implemented soon for the network.
 
 ## Quick run
 
