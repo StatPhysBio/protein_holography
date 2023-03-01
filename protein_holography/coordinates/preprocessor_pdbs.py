@@ -48,7 +48,7 @@ def process_data(pdb: str, pdb_dir: str) -> np.ndarray:
     else:
         logging.warning(f'Pose could not be created for protein {pdb_file}.')
         return process_data.callback(None,**process_data.params)
-    logging.debug('pdb is ',pdb,pose.pdb_info().name())
+    #logging.debug(f'pdb is {pdb}{pose.pdb_info().name()}')
     return process_data.callback(pose, **process_data.params)
 
 def initializer(init, callback: Callable, params, init_params):

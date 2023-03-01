@@ -53,7 +53,7 @@ def get_padded_neighborhoods(np_protein,r_max,padded_length,unique_chains):
         del neighborhoods
     except Exception as e:
         print(e)
-        logging.error('Error with',np_protein[0])
+        logging.error(f"Error with{np_protein[0]}")
         #print(traceback.format_exc())
         return (None,)
     

@@ -2,7 +2,9 @@
 
 from argparse import ArgumentParser
 import logging
+import os
 import sys
+from time import time
 from typing import Tuple
 
 import h5py
@@ -138,6 +140,8 @@ def get_structural_info_from_dataset(
                 except Exception as e:
                     print(e)
                 n+=1
+                #print(pdb, pdb.type)
+                logging.info(f"Wrote to hdf5 for pdb = {pdb}")
                 bar.next()
 
 def main():
@@ -176,6 +180,8 @@ def main():
     
     args = parser.parse_args()
 
+    os.environ['NUMEXPR_MAX_THREADS'] = '4'#str(args.parallelism)
+
     get_structural_info_from_dataset(
         args.hdf5_in,
         args.pdb_list,
@@ -187,4 +193,6 @@ def main():
     )
 
 if __name__ == "__main__":
+    start_time=time()
     main()
+    print(f"Total time = {time() - start_time:.2f} seconds")
