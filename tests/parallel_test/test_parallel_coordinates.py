@@ -28,6 +28,10 @@ phdir = Path(protein_holography.__file__).parents[1]
 # pyrosetta.init(init_flags)
 
 true_dataset = 'parallel_proteinG'
+true_protein_hdf5 = os.path.join(
+    phdir, 
+    "tests/parallel_test",
+    'parallel_proteinG_true_proteins.hdf5')
 with h5py.File(
     os.path.join(
         phdir, 
@@ -65,11 +69,19 @@ parallelism = 4
 get_structural_info_from_dataset(
     pdb_hdf5, dataset, pdbdir, max_atoms, proteins_hdf5, parallelism
 )
-         
+print("\n\nprotein_hdf5",proteins_hdf5,"\n\n")         
 def test_structural_info():
     with h5py.File(proteins_hdf5,'r') as f:
         for i,test_structural_info in enumerate(f[dataset]):
-            assert test_structural_info == true_structural_info[i]
+            # print(i, test_structural_info == true_structural_info[i])
+            for n in test_structural_info.dtype.names:
+                if n == "pdb":
+                    assert (test_structural_info[n] == true_structural_info[i][n])
+                else:
+                    assert (test_structural_info[n] == true_structural_info[i][n]).all()
+            #    print(np.argwhere(test_structural_info[n] != true_structural_info[i][n]))
+            # print(true_structural_info, test_structural_info[i])            
+            # assert test_structural_info == true_structural_info[i]
     print(f"Size of protein file:{os.path.getsize(proteins_hdf5) / 1e6:.2f} MB")
     # os.system(f"rm {proteins_hdf5}")
 #
