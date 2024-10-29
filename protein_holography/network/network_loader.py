@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import tensorflow as tf
 
@@ -62,7 +63,9 @@ def load_network_from_weights(saved_network):
 
 
 
-def load_best_network():
+def load_best_network(network_dir=None):
+    if network_dir == None:
+        network_dir = Path(__file__).parents[0] / "model_weights/best_network"
     saved_network = (
         'bsize=256_ch=chain_connection=full_d=10.0_dropout_rate=0.000549_hdim=14'
         '_k=0j+20+0j_l=5_learnrate=0.001_n_dense=2_netL=5_nlayers=4_opt=Adam'
@@ -70,6 +73,6 @@ def load_best_network():
     )
     network = load_network_from_weights(saved_network)
     network.load_weights(os.path.join(
-        '/gscratch/scrubbed/mpun/data/casp12/network_output/best_network/',
+        network_dir,
         saved_network))
     return network
